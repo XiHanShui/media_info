@@ -30,6 +30,7 @@ class StructurePane extends StatefulWidget {
     this.resetToken = 0,
     this.onNodeSelected,
     this.selectedNode,
+    this.playheadOffset,
   });
 
   /// 文件路径（惰性展开重新解析、hex 读字节都用它）。
@@ -52,6 +53,9 @@ class StructurePane extends StatefulWidget {
 
   /// 外部指定的选中块（受控）。给了就用它——胶片条上点一段也能让树选中。
   final ContainerNode? selectedNode;
+
+  /// 播放头当前所在的字节偏移（树里用播放头记号标出）。
+  final int? playheadOffset;
 
   @override
   State<StructurePane> createState() => _StructurePaneState();
@@ -104,6 +108,7 @@ class _StructurePaneState extends State<StructurePane> {
             loader: widget.loader,
             selectedNode: selected,
             onNodeSelected: _onNodeSelected,
+            playheadOffset: widget.playheadOffset,
             resetToken: widget.resetToken,
           ),
         ),

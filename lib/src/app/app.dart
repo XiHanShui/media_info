@@ -27,6 +27,8 @@ import '../ui/structure_pane.dart';
 import '../core/node.dart';
 import 'document_tab.dart';
 import 'file_strip.dart';
+import 'player/player_panel.dart';
+import 'position_service.dart';
 import 'theme.dart';
 import 'parse_service.dart';
 
@@ -161,6 +163,8 @@ class _AppShellState extends State<AppShell> {
     if (_paths.length < 2) return;
     setState(() {
       _selectedIndex = (_selectedIndex + 1) % _paths.length;
+      _selectedNode = null;
+      _playheadOffset = null;
     });
   }
 
@@ -189,6 +193,12 @@ class _AppShellState extends State<AppShell> {
 
   /// 当前标签页里选中的块（胶片条与结构树共享）。
   ContainerNode? _selectedNode;
+
+  /// 播放器面板是否展开。
+  bool _showPlayer = false;
+
+  /// 播放头当前所在的字节偏移（用来在结构树里高亮当前块）。
+  int? _playheadOffset;
 
   /// 胶片条：顶层块按比例排开。
   Widget _buildFileStrip() {
@@ -271,6 +281,7 @@ class _AppShellState extends State<AppShell> {
         loader: parseStructureAtDepth,
         resetToken: _selectedIndex,
         selectedNode: _selectedNode,
+        playheadOffset: _playheadOffset,
         onNodeSelected: (ContainerNode node) =>
             setState(() => _selectedNode = node),
       ),
@@ -297,6 +308,7 @@ class _AppShellState extends State<AppShell> {
                 _WarningBanner(message: _currentParseWarning!, kind: _WarningKind.parse),
               _buildFileStrip(),
               Expanded(child: _buildBody()),
+              if (_showPlayer) _buildPlayer(),
             ],
           ),
         ),
@@ -355,6 +367,17 @@ class _AppShellState extends State<AppShell> {
             label: '导出 JSON',
             onPressed: _currentDocument == null ? null : _exportJson,
           ),
+          const SizedBox(width: 8),
+          _FlatButton(
+            icon: Icons.play_circle_outline,
+            label: _showPlayer ? '收起播放器' : '播放',
+            onPressed: _currentDocument == null
+                ? null
+                : () => setState(() {
+                      _showPlayer = !_showPlayer;
+                      _playheadOffset = null;
+                    }),
+          ),
           const Spacer(),
           if (_currentDocument != null)
             Text(
@@ -364,6 +387,33 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
     );
+  }
+
+  /// 底部的播放器条（固定高度，不把上面的结构树挤没）。
+  Widget _buildPlayer() {
+    final document = _currentDocument;
+    if (document == null) return const SizedBox.shrink();
+    final hasVideo = _hasVideoTrack(document);
+    return SizedBox(
+      height: kPlayerBarHeight,
+      child: PlayerPanel(
+        path: document.path,
+        positionIndex: positionIndexOf(document),
+        selectedOffset: _selectedNode?.offset,
+        hasVideo: hasVideo,
+        onPositionOffset: (int? offset) => setState(() => _playheadOffset = offset),
+      ),
+    );
+  }
+
+  /// 这个文件里有没有视频轨。
+  bool _hasVideoTrack(ParsedDocument document) {
+    for (final track in document.tracks) {
+      for (final field in track.fields) {
+        if (field.key == 'track_type' && field.value == 'video') return true;
+      }
+    }
+    return false;
   }
 
   /// 主体。

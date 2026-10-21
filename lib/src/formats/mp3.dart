@@ -23,6 +23,7 @@ import 'dart:typed_data';
 import '../core/byte_source.dart';
 import '../core/engine.dart';
 import '../core/node.dart';
+import '../core/position_index.dart';
 import '../core/registry.dart';
 import '../core/spec.dart';
 
@@ -53,6 +54,7 @@ const ContainerSpec _mp3Container = ContainerSpec(
 /// 通用容器引擎的规格表表达不了它，这里的 [FormatSpec.container] 只是占位。
 FormatSpec get mp3Format => FormatSpec(
   name: 'MP3',
+  positionIndexBuilder: buildMp3PositionIndex,
   container: _mp3Container,
   extractor: extractMp3Fields,
   detect: detectMp3,
@@ -60,6 +62,65 @@ FormatSpec get mp3Format => FormatSpec(
   // 调用方统一用 parseFormat()，不需要按格式分支。
   parser: parseMp3,
 );
+
+/// MP3 的位置索引：**精确**（按帧表换算）。
+///
+/// 每一帧的起始偏移与起始时间都能从树里算出来——
+/// 帧节点自带 `samples_per_frame` 与 `sample_rate` 字段。
+PositionIndex? buildMp3PositionIndex(ContainerNode root, Duration duration) {
+  final frames = findNodes(root, kMp3FrameType);
+  if (frames.isEmpty) return null;
+
+  final starts = <int>[];
+  final times = <Duration>[];
+  var cursorMicros = 0;
+
+  for (final frame in frames) {
+    starts.add(frame.offset);
+    times.add(Duration(microseconds: cursorMicros));
+    final rate = fieldOf(frame, 'sample_rate');
+    final samples = fieldOf(frame, 'samples_per_frame');
+    if (rate is num && samples is num && rate > 0) {
+      cursorMicros += (samples.toInt() * 1000000) ~/ rate.toInt();
+    }
+  }
+
+  final payload = ByteRange(starts.first, root.size);
+
+  Duration? toTime(int offset) {
+    if (offset < starts.first) return null;
+    var index = -1;
+    for (var i = 0; i < starts.length; i++) {
+      if (starts[i] <= offset) {
+        index = i;
+      } else {
+        break;
+      }
+    }
+    if (index < 0) return null;
+    return times[index];
+  }
+
+  int? toOffset(Duration position) {
+    if (position < Duration.zero || position > duration) return null;
+    var index = 0;
+    for (var i = 0; i < times.length; i++) {
+      if (times[i] <= position) {
+        index = i;
+      } else {
+        break;
+      }
+    }
+    return starts[index];
+  }
+
+  return PositionIndex(
+    duration: duration,
+    payload: payload,
+    exactMapper: toTime,
+    exactInverse: toOffset,
+  );
+}
 
 /// 注册 MP3 格式。重复注册安全（同名格式会被替换而不是重复登记）。
 ///

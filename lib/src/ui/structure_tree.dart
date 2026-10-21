@@ -65,6 +65,7 @@ class StructureTree extends StatefulWidget {
     this.loader,
     this.selectedNode,
     this.onNodeSelected,
+    this.playheadOffset,
     this.resetToken = 0,
   });
 
@@ -82,6 +83,9 @@ class StructureTree extends StatefulWidget {
 
   /// 当前选中的块（在树里高亮）。
   final ContainerNode? selectedNode;
+
+  /// 播放头当前所在的字节偏移——落在哪个块里就在那一行标一个播放头记号。
+  final int? playheadOffset;
 
   /// 选中一个块时的回调（hex 面板靠它更新）。
   final ValueChanged<ContainerNode>? onNodeSelected;
@@ -285,6 +289,7 @@ class _StructureTreeState extends State<StructureTree> {
                 busy: _busy.contains(row.key),
                 lazy: _leaf.contains(row.key),
                 selected: _isSelected(row.node),
+                playhead: _containsPlayhead(row.node),
                 onToggle: () => _onToggle(row),
                 onSelect: () => widget.onNodeSelected?.call(row.node),
               );
@@ -302,6 +307,13 @@ class _StructureTreeState extends State<StructureTree> {
     return selected.offset == node.offset &&
         selected.size == node.size &&
         selected.type == node.type;
+  }
+
+  /// 播放头是不是落在这一行里。
+  bool _containsPlayhead(ContainerNode node) {
+    final offset = widget.playheadOffset;
+    if (offset == null) return false;
+    return offset >= node.offset && offset < node.offset + node.size;
   }
 }
 
@@ -369,6 +381,7 @@ class _TreeRowWidget extends StatelessWidget {
     required this.busy,
     required this.lazy,
     required this.selected,
+    required this.playhead,
     required this.onToggle,
     required this.onSelect,
   });
@@ -379,6 +392,7 @@ class _TreeRowWidget extends StatelessWidget {
   final bool busy;
   final bool lazy;
   final bool selected;
+  final bool playhead;
   final VoidCallback onToggle;
   final VoidCallback onSelect;
 
@@ -408,6 +422,15 @@ class _TreeRowWidget extends StatelessWidget {
           children: <Widget>[
             SizedBox(width: row.depth * 14.0),
             SizedBox(width: 18, height: 18, child: _toggleButton(context)),
+            if (playhead)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(
+                  Icons.play_arrow,
+                  size: 11,
+                  color: MediaColors.amber,
+                ),
+              ),
             Expanded(
               child: Text(
                 structureNodeLabel(row.node.type),

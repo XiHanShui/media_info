@@ -16,6 +16,7 @@ import 'dart:typed_data';
 
 import '../core/byte_source.dart';
 import '../core/node.dart';
+import '../core/position_index.dart';
 import '../core/registry.dart';
 import '../core/spec.dart';
 import 'matroska_schema.dart';
@@ -40,6 +41,9 @@ const String kVideoId = '0xE0';
 
 /// Audio 元素（`0xE1`）。
 const String kAudioId = '0xE1';
+
+/// Cluster 元素（承载媒体载荷）。
+const String kClusterId = '0x1F43B675';
 
 /// EBML 的通用块头：元素 ID 是变长整数，元素尺寸是变长整数。
 ///
@@ -90,7 +94,26 @@ FormatSpec get matroskaFormat => _cachedFormat ??= FormatSpec(
   container: matroskaContainerSpec,
   extractor: extractMatroskaFields,
   detect: _detectMatroska,
+  positionIndexBuilder: buildMatroskaPositionIndex,
 );
+
+/// Matroska 的位置索引：按 **Cluster** 区间与总时长线性估算。
+///
+/// Cluster 在树里的 type 是十六进制元素 ID（`0x1F43B675`），不是 ASCII 名字——
+/// 这类格式知识只能留在格式模块里。
+PositionIndex? buildMatroskaPositionIndex(ContainerNode root, Duration duration) {
+  final clusters = findNodes(root, kClusterId);
+  if (clusters.isEmpty) return null;
+
+  var start = clusters.first.offset;
+  var end = start;
+  for (final cluster in clusters) {
+    if (cluster.offset < start) start = cluster.offset;
+    if (cluster.offset + cluster.size > end) end = cluster.offset + cluster.size;
+  }
+  if (end <= start) return null;
+  return PositionIndex(duration: duration, payload: ByteRange(start, end));
+}
 
 /// 把 Matroska / WebM 注册进全局格式表。
 void registerMatroska() => registerFormat(matroskaFormat);

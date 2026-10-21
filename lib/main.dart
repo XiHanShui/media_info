@@ -11,6 +11,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
 
 import 'src/app/app.dart';
 import 'src/app/export.dart';
@@ -19,6 +20,8 @@ import 'src/formats/all_formats.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // 播放器（media_kit / libmpv）必须先初始化。
+  MediaKit.ensureInitialized();
   registerAllFormats();
   // SnackBar 的载体：导出完成后用它提示「已导出到 …」。
   final messengerKey = GlobalKey<ScaffoldMessengerState>();

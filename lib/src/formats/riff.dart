@@ -38,6 +38,7 @@ import 'dart:typed_data';
 import '../core/byte_source.dart';
 import '../core/engine.dart';
 import '../core/node.dart';
+import '../core/position_index.dart';
 import '../core/registry.dart';
 import '../core/spec.dart';
 
@@ -396,6 +397,64 @@ double decodeExtended80(Uint8List bytes) {
   return negative ? -value : value;
 }
 
+/// WAV / AIFF 的位置索引：**精确**（按字节率换算）。
+///
+/// 字节率：WAV 的 `fmt ` 块直接有 `byte_rate`；AIFF 的 `COMM` 块没有，
+/// 要用 采样率 × 声道 × 位深 算（采样率是 80 位扩展精度浮点，见 [decodeExtended80]）。
+PositionIndex? buildRiffPositionIndex(
+  ContainerNode root,
+  Duration duration, {
+  required String dataChunkType,
+  required String formatChunkType,
+}) {
+  final data = findNode(root, dataChunkType);
+  if (data == null) return null;
+  final payload = ByteRange(data.dataOffset, data.dataOffset + data.dataSize);
+  if (payload.length <= 0) return null;
+
+  final fmt = findNode(root, formatChunkType);
+  int? byteRate;
+  if (fmt != null) {
+    final raw = fieldOf(fmt, 'byte_rate');
+    if (raw is num) byteRate = raw.toInt();
+  }
+  if (byteRate == null && fmt != null) {
+    // AIFF：采样率 × num_channels × sample_size / 8
+    final rawRate = fieldOf(fmt, 'sample_rate');
+    final channels = fieldOf(fmt, 'num_channels') ?? fieldOf(fmt, 'channels');
+    final sampleSize = fieldOf(fmt, 'sample_size') ?? fieldOf(fmt, 'bits_per_sample');
+    final rate = rawRate is Uint8List ? decodeExtended80(rawRate) : (rawRate is num ? rawRate.toDouble() : null);
+    if (rate != null && channels is num) {
+      final bits = sampleSize is num ? sampleSize.toInt() : 16;
+      byteRate = (rate * channels.toInt() * bits / 8).round();
+    }
+  }
+  if (byteRate == null || byteRate <= 0) {
+    // 算不出字节率就退回线性估算。
+    return estimatedPositionIndex(root, duration);
+  }
+
+  final rate = byteRate;
+  Duration? toTime(int offset) {
+    if (offset < payload.start || offset >= payload.end) return null;
+    return Duration(microseconds: (offset - payload.start) * 1000000 ~/ rate);
+  }
+
+  int? toOffset(Duration position) {
+    if (position < Duration.zero || position > duration) return null;
+    final offset = payload.start + position.inMicroseconds * rate ~/ 1000000;
+    if (offset < payload.start || offset >= payload.end) return null;
+    return offset;
+  }
+
+  return PositionIndex(
+    duration: duration,
+    payload: payload,
+    exactMapper: toTime,
+    exactInverse: toOffset,
+  );
+}
+
 /// WAVEFORMATEXTENSIBLE 扩展部分的解码结果。
 typedef WaveFormatExExtension = ({
   /// 有效位数（`wValidBitsPerSample`）。
@@ -695,6 +754,13 @@ bool detectAiff(ByteSource source) {
 /// WAV 格式的注册项。
 FormatSpec get wavFormat => FormatSpec(
   name: 'WAV',
+  positionIndexBuilder: (ContainerNode root, Duration duration) =>
+      buildRiffPositionIndex(
+        root,
+        duration,
+        dataChunkType: 'data',
+        formatChunkType: 'fmt ',
+      ),
   container: wavSpec,
   extractor: extractWavFields,
   detect: detectWav,
@@ -704,6 +770,13 @@ FormatSpec get wavFormat => FormatSpec(
 /// AIFF 格式的注册项。
 FormatSpec get aiffFormat => FormatSpec(
   name: 'AIFF',
+  positionIndexBuilder: (ContainerNode root, Duration duration) =>
+      buildRiffPositionIndex(
+        root,
+        duration,
+        dataChunkType: 'SSND',
+        formatChunkType: 'COMM',
+      ),
   container: aiffSpec,
   extractor: extractAiffFields,
   detect: detectAiff,

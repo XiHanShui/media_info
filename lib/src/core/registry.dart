@@ -2,6 +2,8 @@ import 'byte_source.dart';
 import 'engine.dart';
 import 'errors.dart';
 import 'extractor.dart';
+import 'node.dart';
+import 'position_index.dart';
 import 'spec.dart';
 
 /// 一个已注册的容器格式。
@@ -15,6 +17,7 @@ class FormatSpec {
     this.extractor, // 叶子提取器
     this.detect, // 嗅探：从文件头判断是不是这个格式
     this.parser, // 自定义解析入口（容器结构不规则时用）
+    this.positionIndexBuilder, // 字节位置 → 播放时间 的映射（格式自知字段名）
   });
 
   /// 格式名。
@@ -40,6 +43,13 @@ class FormatSpec {
   /// 这类格式由自己的模块提供解析函数，通过本字段接进来，**调用方无需知道差别**——
   /// 统一走 [parseFormat]。
   final ParseResult Function(ByteSource source, {int depth})? parser;
+
+  /// 位置索引构建器：把"文件里的字节位置"映射到"播放时间"。
+  ///
+  /// 格式自知自己的字段名与块结构（WAV 的 `fmt ` 块、AIFF 的 `COMM` 块、
+  /// MP3 的帧表），所以由各格式模块提供。没提供时用通用的线性估算兜底。
+  final PositionIndex? Function(ContainerNode root, Duration duration)?
+  positionIndexBuilder;
 }
 
 final List<FormatSpec> _registry = <FormatSpec>[];
