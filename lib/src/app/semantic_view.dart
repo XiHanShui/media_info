@@ -3,12 +3,12 @@
 /// 三个区段，顺序固定：「文件级」→「轨道级」（每条轨道一组）→「标签」。
 /// 区段之间用分隔线，**不折叠**。
 ///
-/// 字段行：左 = 中文显示名（`label`），右 = 值（`value`）与单位（`unit`）。
-/// **推算值**（`origin == FieldOrigin.derived`）必须有视觉区分——标签后加「（推算）」
-/// 并用次要颜色，用户要能一眼分出"文件里写的"和"我们算的"（user story 15）。
+/// 排版取"仪器面板"的读法：**数据一律等宽、靠右对齐**，中文显示名是细体无衬线，
+/// 英文技术名（`key`）以更暗的等宽小字紧跟在显示名后面——不翻译，也不另起一行
+/// （另起一行会让长值换行时把英文名挤到别处，见 user story 47）。
 ///
-/// 英文技术名（`key`）不翻译，作为次要信息显示在中文显示名下面
-/// （user story 47：字段名保持英文原词）。
+/// 推算值（`origin == FieldOrigin.derived`）必须有视觉区分——标签后跟一个紫色
+/// 「（推算）」chip（user story 15）。
 library;
 
 import 'dart:typed_data';
@@ -19,6 +19,7 @@ import '../core/node.dart';
 import '../core/tag.dart';
 import 'export.dart';
 import 'parse_service.dart';
+import 'theme.dart';
 
 /// 推算值标记的后缀。
 const String kDerivedSuffix = '（推算）';
@@ -32,6 +33,9 @@ const String _kCopyMenuLabel = '复制';
 /// 复制成功后的提示文案前缀。
 const String _kCopiedMessage = '已复制';
 
+/// 值超过这个长度才截断并挂 tooltip（短值不挂，避免满屏 tooltip 的噪声）。
+const int _kTruncateThreshold = 28;
+
 /// 左栏：语义字段视图。
 class SemanticView extends StatelessWidget {
   const SemanticView({super.key, required this.document});
@@ -42,15 +46,15 @@ class SemanticView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 28),
       children: <Widget>[
-        const _SectionHeader('文件级'),
+        const _SectionEyebrow('文件级'),
         if (document.fileFields.isEmpty)
           const _EmptyHint('没有文件级字段')
         else
           for (final field in document.fileFields) _FieldRow(field: field),
-        const Divider(height: 24),
-        const _SectionHeader('轨道级'),
+        const _Rule(),
+        const _SectionEyebrow('轨道级'),
         if (document.tracks.isEmpty)
           const _EmptyHint('没有轨道级字段')
         else
@@ -58,8 +62,8 @@ class SemanticView extends StatelessWidget {
             _TrackHeader(trackIndex: track.trackIndex),
             for (final field in track.fields) _FieldRow(field: field),
           ],
-        const Divider(height: 24),
-        const _SectionHeader('标签'),
+        const _Rule(),
+        const _SectionEyebrow('标签'),
         if (document.tags.isEmpty)
           const _EmptyHint('没有标签')
         else
@@ -69,26 +73,40 @@ class SemanticView extends StatelessWidget {
   }
 }
 
-/// 区段标题。
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
+/// 区段眉标：仪器面板上的丝印字。
+class _SectionEyebrow extends StatelessWidget {
+  const _SectionEyebrow(this.title);
 
   final String title;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Text(
-        title,
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 2,
+            height: 11,
+            color: MediaColors.amber,
+            margin: const EdgeInsets.only(right: 8),
+          ),
+          Text(title, style: MediaType.eyebrow(MediaColors.chalkDim)),
+        ],
       ),
+    );
+  }
+}
+
+/// 区段之间的分隔线（发丝级，不留白）。
+class _Rule extends StatelessWidget {
+  const _Rule();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Divider(height: 1, color: MediaColors.edgeSoft),
     );
   }
 }
@@ -101,15 +119,17 @@ class _TrackHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
-      child: Text(
-        '轨道 $trackIndex',
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.w600,
-        ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Row(
+        children: <Widget>[
+          Text(
+            '轨道 $trackIndex',
+            style: MediaType.eyebrow(MediaColors.teal),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(child: Divider(height: 1, color: MediaColors.edgeSoft)),
+        ],
       ),
     );
   }
@@ -123,75 +143,82 @@ class _FieldRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final derived = field.origin == FieldOrigin.derived;
-
-    final labelStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: derived
-          ? theme.colorScheme.onSurfaceVariant
-          : theme.colorScheme.onSurface,
-      fontStyle: derived ? FontStyle.italic : FontStyle.normal,
-    );
-    final keyStyle = theme.textTheme.labelSmall?.copyWith(
-      color: theme.colorScheme.outline,
-      fontFamily: 'monospace',
-    );
-    final valueStyle = theme.textTheme.bodyMedium?.copyWith(
-      fontFamily: 'monospace',
-    );
-    final unitStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
+    final text = formatFieldValue(field.value);
 
     return _CopyableRow(
       value: formatCopiedFieldValue(field),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Expanded(
-              flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: <Widget>[
-                      Flexible(child: Text(field.label, style: labelStyle)),
-                      if (derived) ...<Widget>[
-                        const SizedBox(width: 4),
-                        Text(
-                          kDerivedSuffix,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.tertiary,
-                            fontStyle: FontStyle.italic,
+      child: _Hoverable(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              // 左：中文显示名 + 英文技术名（暗色等宽小字）
+              Flexible(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: <Widget>[
+                    Flexible(
+                      child: Text(
+                        field.label,
+                        style: MediaType.label(MediaColors.chalk),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Flexible(
+                      child: Text(
+                        field.key,
+                        style: MediaType.note(MediaColors.chalkFaint),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    if (derived) ...<Widget>[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: MediaColors.violet.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(2),
+                          border: Border.all(
+                            color: MediaColors.violet.withValues(alpha: 0.45),
+                            width: 1,
                           ),
                         ),
-                      ],
+                        child: Text(
+                          kDerivedSuffix,
+                          style: MediaType.note(MediaColors.violet),
+                        ),
+                      ),
                     ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              // 右：值（等宽、靠右）
+              Flexible(
+                child: _ValueText(
+                  text: text,
+                  align: TextAlign.right,
+                ),
+              ),
+              if (field.unit != null && field.unit!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    field.unit!,
+                    style: MediaType.note(MediaColors.chalkFaint),
                   ),
-                  Text(field.key, style: keyStyle),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            // 值用 Flexible：长值换行，不撑破左栏。
-            Flexible(
-              flex: 2,
-              child: Text(
-                formatFieldValue(field.value),
-                style: valueStyle,
-                textAlign: TextAlign.right,
-              ),
-            ),
-            if (field.unit != null && field.unit!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(left: 3),
-                child: Text(field.unit!, style: unitStyle),
-              ),
-          ],
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -206,36 +233,79 @@ class _TagRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final text = formatFieldValue(tag.value);
     return _CopyableRow(
       value: formatCopiedTagValue(tag),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Expanded(
-              flex: 3,
-              child: Text(
-                tag.key,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontFamily: 'monospace',
+      child: _Hoverable(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  tag.key,
+                  style: MediaType.value(MediaColors.teal),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Flexible(
-              flex: 2,
-              child: Text(
-                formatFieldValue(tag.value),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontFamily: 'monospace',
-                ),
-                textAlign: TextAlign.right,
-              ),
-            ),
-          ],
+              const SizedBox(width: 14),
+              Flexible(child: _ValueText(text: text, align: TextAlign.right)),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// 值文本：等宽、超长截断并挂 tooltip（完整值仍可通过右键复制拿到，不丢信息）。
+class _ValueText extends StatelessWidget {
+  const _ValueText({required this.text, required this.align});
+
+  final String text;
+  final TextAlign align;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = MediaType.value(MediaColors.chalk);
+    final widget = Text(
+      text,
+      style: style,
+      textAlign: align,
+      // 单行 + 省略号：长值（文件名、编码器串）不该把行撑成两截。
+      // 完整值仍可通过悬停看到、右键复制拿到，不丢信息。
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    if (text.length <= _kTruncateThreshold) return widget;
+    return Tooltip(message: text, child: widget);
+  }
+}
+
+/// 悬停时给行一点底色，让长列表好扫读。
+class _Hoverable extends StatefulWidget {
+  const _Hoverable({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_Hoverable> createState() => _HoverableState();
+}
+
+class _HoverableState extends State<_Hoverable> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 90),
+        color: _hovered ? MediaColors.panelHigh : Colors.transparent,
+        child: widget.child,
       ),
     );
   }
@@ -303,15 +373,9 @@ class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Text(
-        text,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Text(text, style: MediaType.note(MediaColors.chalkFaint)),
     );
   }
 }
@@ -320,7 +384,9 @@ class _EmptyHint extends StatelessWidget {
 ///
 /// - `null` → 「—」；
 /// - 整数按整数显示，整数值的小数不显示小数尾巴；
-/// - 字节串 → 「（N 字节）」，列表 → 「（N 项）」；
+/// - 字节串 → 「（N 字节）」；
+/// - **短列表展开显示**（`isom, iso2, avc1, mp41`），长列表才折叠成「（N 项）」——
+///   折叠会把 `compatible_brands` 这类信息直接丢掉；
 /// - 布尔值 → 「是」/「否」。
 String formatFieldValue(Object? value) {
   if (value == null) return '—';
@@ -334,7 +400,19 @@ String formatFieldValue(Object? value) {
   }
   if (value is num) return value.toString();
   if (value is Uint8List) return '（${value.length} 字节）';
-  if (value is List) return '（${value.length} 项）';
+  if (value is List) {
+    if (value.isEmpty) return '（空）';
+    final simple = value.every(
+      (Object? item) =>
+          item == null || item is num || item is String || item is bool,
+    );
+    if (simple && value.length <= 6) {
+      return value
+          .map((Object? item) => item?.toString() ?? '—')
+          .join(', ');
+    }
+    return '（${value.length} 项）';
+  }
   if (value is Map) return '（${value.length} 项）';
   return value.toString();
 }

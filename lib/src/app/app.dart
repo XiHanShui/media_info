@@ -24,7 +24,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../ui/structure_pane.dart';
+import '../core/node.dart';
 import 'document_tab.dart';
+import 'file_strip.dart';
+import 'theme.dart';
 import 'parse_service.dart';
 
 /// 导出 JSON 的处理器。
@@ -69,16 +72,8 @@ class MediaInfoApp extends StatelessWidget {
   }
 }
 
-/// 应用主题。
-ThemeData _buildTheme() {
-  final scheme = ColorScheme.fromSeed(seedColor: const Color(0xFF3B6EA5));
-  return ThemeData(
-    colorScheme: scheme,
-    useMaterial3: true,
-    visualDensity: VisualDensity.compact,
-    dividerTheme: const DividerThemeData(space: 1, thickness: 1),
-  );
-}
+/// 应用主题：暗色仪器面板（见 `docs/design/visual-language.md`）。
+ThemeData _buildTheme() => buildMediaTheme();
 
 /// 窗口骨架：标签页栏 + 工具条 + 主体。
 class AppShell extends StatefulWidget {
@@ -178,6 +173,34 @@ class _AppShellState extends State<AppShell> {
   /// 当前标签页的扩展名提示。
   String? get _currentWarning => _currentDocument?.extensionWarning;
 
+  /// 当前标签页的截断/损坏提示。
+  ///
+  /// 引擎在读到字节不足时会给出中文说明（"文件在偏移 X 处截断，声明长度还差 N 字节"），
+  /// 但**已解析的部分结构仍然有效**——所以这是警告，不是错误：界面照常显示字段与结构树。
+  String? get _currentParseWarning {
+    final document = _currentDocument;
+    if (document == null) return null;
+    // 根本没能打开或识别文件（打不开、不是媒体）——那是错误状态，不是"解析途中出问题"，
+    // 由各自的空态/错误页负责，这里不再重复提示。
+    if (document.detectedFormat == null) return null;
+    if (!document.truncated && document.error == null) return null;
+    return document.error ?? '文件被截断';
+  }
+
+  /// 当前标签页里选中的块（胶片条与结构树共享）。
+  ContainerNode? _selectedNode;
+
+  /// 胶片条：顶层块按比例排开。
+  Widget _buildFileStrip() {
+    final document = _currentDocument;
+    if (document?.root == null) return const SizedBox.shrink();
+    return FileStrip(
+      root: document!.root,
+      selected: _selectedNode,
+      onSelect: (ContainerNode node) => setState(() => _selectedNode = node),
+    );
+  }
+
   /// 弹出文件选择器。
   Future<void> _pickFiles() async {
     const typeGroup = XTypeGroup(
@@ -247,6 +270,8 @@ class _AppShellState extends State<AppShell> {
         root: document?.root,
         loader: parseStructureAtDepth,
         resetToken: _selectedIndex,
+        onNodeSelected: (ContainerNode node) =>
+            setState(() => _selectedNode = node),
       ),
     );
   }
@@ -267,6 +292,9 @@ class _AppShellState extends State<AppShell> {
               _buildToolbar(),
               if (_currentWarning != null)
                 _WarningBanner(message: _currentWarning!),
+              if (_currentParseWarning != null)
+                _WarningBanner(message: _currentParseWarning!, kind: _WarningKind.parse),
+              _buildFileStrip(),
               Expanded(child: _buildBody()),
             ],
           ),
@@ -277,24 +305,21 @@ class _AppShellState extends State<AppShell> {
 
   /// 标签页栏。
   Widget _buildTabStrip() {
-    final theme = Theme.of(context);
     if (_paths.isEmpty) {
       return Container(
-        height: 34,
+        height: 36,
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        color: theme.colorScheme.surfaceContainerHigh,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        color: MediaColors.panel,
         child: Text(
           '未打开文件',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: MediaType.note(MediaColors.chalkFaint),
         ),
       );
     }
     return Container(
-      height: 34,
-      color: theme.colorScheme.surfaceContainerHigh,
+      height: 36,
+      color: MediaColors.panel,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _paths.length,
@@ -315,21 +340,26 @@ class _AppShellState extends State<AppShell> {
   /// 工具条：打开文件 / 导出 JSON。
   Widget _buildToolbar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(
         children: <Widget>[
-          FilledButton.tonalIcon(
+          _FlatButton(
+            icon: Icons.folder_open,
+            label: '打开文件',
             onPressed: _pickFiles,
-            icon: const Icon(Icons.folder_open),
-            label: const Text('打开文件'),
           ),
           const SizedBox(width: 8),
-          OutlinedButton.icon(
+          _FlatButton(
+            icon: Icons.data_object,
+            label: '导出 JSON',
             onPressed: _currentDocument == null ? null : _exportJson,
-            icon: const Icon(Icons.data_object),
-            label: const Text('导出 JSON'),
           ),
           const Spacer(),
+          if (_currentDocument != null)
+            Text(
+              _fileNameOf(_currentDocument!.path),
+              style: MediaType.note(MediaColors.chalkFaint),
+            ),
         ],
       ),
     );
@@ -371,40 +401,36 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-/// 扩展名与实际格式不一致的提示条。
+/// 警告条：扩展名与实际格式不符 / 文件被截断。
+///
+/// 两种都是**警告不是错误**——解析照实际内容走，已读到的部分照常显示。
 class _WarningBanner extends StatelessWidget {
-  const _WarningBanner({required this.message});
+  const _WarningBanner({required this.message, this.kind = _WarningKind.extension});
 
   final String message;
+  final _WarningKind kind;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      color: theme.colorScheme.tertiaryContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      color: MediaColors.rose.withValues(alpha: 0.10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
       child: Row(
         children: <Widget>[
-          Icon(
-            Icons.warning_amber_rounded,
-            size: 18,
-            color: theme.colorScheme.onTertiaryContainer,
-          ),
+          const Icon(Icons.warning_amber_rounded, size: 15, color: MediaColors.rose),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              message,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onTertiaryContainer,
-              ),
-            ),
+            child: Text(message, style: MediaType.note(MediaColors.rose)),
           ),
         ],
       ),
     );
   }
 }
+
+/// 警告的种类（决定图标与措辞）。
+enum _WarningKind { extension, parse }
 
 /// 一个标签页按钮。
 class _TabButton extends StatelessWidget {
@@ -422,33 +448,79 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Material(
-      color: selected
-          ? theme.colorScheme.surface
-          : theme.colorScheme.surfaceContainerHigh,
+      color: selected ? MediaColors.ink : MediaColors.panel,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: selected ? MediaColors.amber : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          padding: const EdgeInsets.only(left: 14, right: 4),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
                 label,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                style: MediaType.value(
+                  selected ? MediaColors.chalk : MediaColors.chalkDim,
                 ),
               ),
               IconButton(
                 onPressed: onClose,
-                icon: const Icon(Icons.close, size: 14),
-                iconSize: 14,
+                icon: const Icon(Icons.close, size: 13),
+                iconSize: 13,
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+                    color: MediaColors.chalkFaint,
                 tooltip: '关闭标签页',
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 平面按钮：发丝描边、无阴影、无圆角胶囊——仪器面板的味道。
+class _FlatButton extends StatelessWidget {
+  const _FlatButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final color = enabled ? MediaColors.chalkDim : MediaColors.chalkFaint;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            border: Border.all(color: MediaColors.edge),
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
+              Text(label, style: MediaType.label(color)),
             ],
           ),
         ),
@@ -465,30 +537,27 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(
+          const Icon(
             Icons.movie_filter_outlined,
-            size: 40,
-            color: theme.colorScheme.onSurfaceVariant,
+            size: 34,
+            color: MediaColors.chalkFaint,
           ),
-          const SizedBox(height: 12),
-          Text('没有打开的文件', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
+          Text('没有打开的文件', style: MediaType.label(MediaColors.chalkDim)),
+          const SizedBox(height: 6),
           Text(
             '把媒体文件拖进来，或点「打开文件」',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: MediaType.note(MediaColors.chalkFaint),
           ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
+          const SizedBox(height: 16),
+          _FlatButton(
+            icon: Icons.folder_open,
+            label: '打开文件',
             onPressed: onOpen,
-            icon: const Icon(Icons.folder_open),
-            label: const Text('打开文件'),
           ),
         ],
       ),
@@ -504,25 +573,19 @@ class _UnrecognizedFormatPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(
+          const Icon(
             Icons.help_outline,
-            size: 36,
-            color: theme.colorScheme.onSurfaceVariant,
+            size: 30,
+            color: MediaColors.chalkFaint,
           ),
           const SizedBox(height: 12),
-          Text('无法识别的文件格式', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Text(
-            path,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
+          Text('无法识别的文件格式', style: MediaType.label(MediaColors.chalkDim)),
+          const SizedBox(height: 6),
+          Text(path, style: MediaType.note(MediaColors.chalkFaint)),
         ],
       ),
     );
