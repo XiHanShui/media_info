@@ -32,8 +32,6 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 | 决策 | 票 | 影响什么 |
 |---|---|---|
 | 统一节点模型与双视图的数据来源 | [统一节点模型与双视图的数据来源](issues/01-unified-node-model.md) | 节点 schema、字段挂哪一级、结构树是否惰性展开 |
-| 容器格式能否用声明式规格表描述 | [容器格式能否用声明式规格表描述](issues/02-declarative-parsers.md) | 解析层是"N 个解析器"还是"N 张表 + 1 个引擎" |
-| 测试素材获取与归档 | [测试素材获取与归档](issues/04-test-fixtures.md) | 接缝能跑起来的前提：样本从哪来、怎么放 |
 | 字节访问与大文件策略 | [字节访问与大文件策略](issues/06-byte-access-large-files.md) | 随机访问 vs 映射 vs 流式；64 位长度；截断文件行为 |
 | 界面布局与多文件交互 | [界面布局与多文件交互](issues/07-ui-layout-prototype.md) | 分栏形态、hex 侧栏位置、标签页组织 |
 | 统一语义字段词表 | [统一语义字段词表](issues/08-field-vocabulary.md) | 字段的英文技术名、中文显示名、跨格式归一方式 |
@@ -42,7 +40,7 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 | CI 双平台构建 | [CI 双平台构建](issues/10-ci-dual-platform.md) | 构建矩阵、产物形态、缓存 |
 | 分发形态与签名 | [分发形态与签名](issues/11-distribution-form.md) | 用户最终拿到 zip 还是安装包 |
 
-**其中三张是实现的前置**：节点模型、测试素材、字节访问策略。其余可在对应模块开工前补齐。
+**其中两张是实现的前置**：节点模型、字节访问策略。其余可在对应模块开工前补齐。
 
 ## User Stories
 
@@ -130,8 +128,18 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 **解析层**
 
 - 每种格式一个解析器，纯 Dart 手写，不引入 C/C++、FFmpeg 或 MediaInfoLib。**理由**：我们要的是**原始结构 + 结构化数据**；现成方案给的都是**解读 + 文本 blob**——MediaInfo 的 MediaTrace 虽是带 offset 与 size 的真块树，但那是它自己的语义解读树（块名被换成 `Element_Name("File Type")` 之类的标签、未知块被折叠、大块只给 "(N bytes)" 摘要、**无 hex**），而且只能拿到一整块预渲染的 XML 文本，真正的树对象在 C++ 内部不导出；FFmpeg 则根本没有块树（`av_dump_format` 只打印元数据，`AVIO_FLAG_TRACE` 已从 master 移除）。引入任一原生库还会立刻加上"必须有 macOS 构建机"的硬约束——`flutter build macos` 在非 macOS 主机上直接报错退出。详见 [调研结论](../../docs/research/03-mediainfo-ffprobe-depth.md)。
-- 解析器通过一个注册表接入，扩展点是"新增一个解析器 + 一张格式描述"，不需要改动引擎骨架。
-- 每种容器只写一个**块头扫描器**，产出统一节点模型的最小四元组——`type`（文件里字面的块类型名）+ `offset` + `size` + `children`——语义字段再从同一棵树上**推导**，这样字段与结构树的位置天然一致。各容器的块头布局已知：ISO BMFF 是 8/16 字节 box 头（`size == 1` 走 64 位扩展，`size == 0` 到文件尾）、RIFF 是 `id + LE32 size`、EBML 是 element id + VINT size（含未知长度哨兵）、FLAC 是元数据块（last-metadata-block 标志 + 24 位长度）、MP3 是帧序列（**这一档没有真正的块树**，按帧列表呈现）。原始 hex 由 Dart 侧按 offset/size 自行从文件读取。
+- 解析层分**三层**，不要在"N 个手写解析器"和"N 张表 + 1 个引擎"之间二选一：
+  1. **规格表**（声明式数据）——每种格式一张表：MP4 的 box 表、Matroska 的 element 表、RIFF 的 chunk 表、FLAC 的 block 表。Matroska 的表**已经由规范以机器可读形式发布**（`ebml_matroska.xml`，262 个元素 / 49 个 master 元素），转换为 Dart 表是机械工作，官方 XML 是唯一真相源。
+  2. **通用容器引擎**（代码，只写一次）——读头 → 查表 → 走字段 → 递归 → 产出统一节点。
+  3. **叶子提取器**（少量手写）——从已解析的树里取语义字段，每格式一个，不重复解析字节。
+- 这个划分与语义字段的深度约束天然对齐：结构树（偏移/长度/hex）由第 1+2 层产出，语义字段由第 3 层产出；"语义字段只做到轨道级、不做编码参数级"恰好让第 3 层保持很小。
+- **通用引擎必须支持的能力**：32/64 位长度 + "size==0 延伸到 EOF"、变长整数（VINT）、unknown size + 基于路径的收尾判定、version 条件字段、24 位 flags、按前一字段决定后续数组宽度、计数前缀数组 / 嵌套记录、长度前缀字节串、**位域（bit-level）字段**、块内字节序切换、动态 type 分派 + 二级表、自描述尾部长度、**"未知即跳过"兜底**。最后一条是刚需——三种格式的规范都要求忽略并跳过未识别的类型，因此引擎永远能产出完整的结构树，即使遇到没见过的扩展。
+- **必须留手写逃生口的地方**（不能只靠表）：MP4 的 `stsd` 动态 sample entry（`avcC` 定义在 14496-15 而非 14496-12）、`stz2` 的运行期定宽数组、`colr` 按 tag 分派的变长载荷；EBML 的 Block Lacing（载荷不可表驱动，结构树里当不透明叶子）；RIFF 的 chunk type 无中心注册表（表只能"通配 + 不透明"）、`fmt ` 是带 `cbSize` 扩展的 tagged union；FLAC 的位域载荷与 Vorbis comment 的小端例外。
+- 各容器的块头规则：ISO BMFF 是 8/16 字节 box 头（`size == 1` 走 64 位扩展，`size == 0` 到文件尾）、RIFF 是 `id + LE32 size`（奇数长度补 1 字节）、EBML 是 element id + VINT size（含未知长度哨兵）、FLAC 是元数据块（last-metadata-block 标志 + 24 位长度）、MP3 是帧序列（**这一档没有真正的块树**，按帧列表呈现）。原始 hex 由 Dart 侧按 offset/size 自行从文件读取。
+- **注册表登记的是规格表 + 可选的叶子提取器**，不是解析器对象——第三方加一个新容器 = 写一张表。扩展点的形状不变，粒度变细。
+- **不引入的库**：`binstruct`（只有 8/16 位整数 + float32，补齐所需能力等于重写，且无维护者）、Kaitai `.ksy`（pub.dev 上没有 Dart 运行时）、`mediaindex_dart`（SDK 约束 `<3.0.0`，本机 resolve 不下来）、直接依赖 `ebml` 包（形态对但 2023-09 后未更新、只内置 EBML Header 表——但它的 `SchemaElement` 字段设计值得抄）。Dart 生态没有可用的通用声明式二进制解析库，需自建 DSL + 引擎（约 300–500 行）。
+- **先做纵切验证**：用最小表集实现 MP4 的 `moov → trak → mdia → minf → stbl → stsd`，确认 version 条件字段 + 动态 type 分派能在引擎里表达，再推广到其它三种格式。
+- 详细依据见 [调研 02](../../docs/research/02-declarative-parsers.md) 与 [调研 03](../../docs/research/03-mediainfo-ffprobe-depth.md)。
 - 节点模型统一承载两种视图：结构树与语义字段从同一份数据派生，节点携带名称、类型、偏移量、长度、字段值与子节点（确切 schema 待[统一节点模型与双视图的数据来源](issues/01-unified-node-model.md)定）。
 - 解析层是"N 个命令式解析器"还是"N 张声明式规格表 + 1 个通用引擎"，待[容器格式能否用声明式规格表描述](issues/02-declarative-parsers.md)结论；这个选择显著影响后续所有实现的工作量。
 - 字节读取策略、64 位长度（`largesize` / `co64`）、以及大文件下的惰性展开行为，待[字节访问与大文件策略](issues/06-byte-access-large-files.md)定。
@@ -181,6 +189,8 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 **既有测试的处理** —— 脚手架自带的计数器冒烟测试断言的是模板的 `MyApp` / `MyHomePage`，应用一旦重写就会失效，随第一批实现一并删除。
 
 **测试目标** —— 每个目标格式（WAV、AIFF、FLAC、MP3、MP4、MOV、MKV、WebM）至少覆盖三类样本：正常样本、边界样本（最小尺寸、罕见但合法的参数组合）、损坏样本（截断、长度字段撒谎、未知块）。
+
+**素材已就位** —— `test/fixtures/` 下 24 个样本，约 550 KB，全部由本机 ffmpeg 确定性生成（`dart run tool/gen_fixtures.dart` 可重现），不下载任何外部内容，因此随仓库提交，不需要 LFS。命名 `<格式>_<参数>.<类别>.<扩展名>`，类别为 `normal` / `edge` / `truncated` / `liesize`。**已知盲区**：素材只覆盖 ffmpeg 会写出的那种布局，真实世界里千奇百怪的文件（多个 `mdat` 的 MP4、`moov` 位于文件尾部的 MP4、fMP4 分片、非标准 mux 的 MKV）需要另行补充。
 
 **已知的覆盖盲区** —— 用自己产的 golden 文件做基准，有一个结构性盲区：**"解析器从一开始就漏了某个块"这类 bug 测不出来**，因为 golden 也是我们自己产的，漏了就是两边一起漏。是否引入 MediaInfo 的 MediaTrace XML 作**离线**对照基准（只作 CI 里的对照工具，不进产品二进制；且只单向可用——"MediaTrace 有、我们没有"是我们错，"它漏了我们有"不一定），待 [以 MediaTrace 作为结构树的离线校验基准](issues/12-mediatrace-offline-oracle.md) 定。
 

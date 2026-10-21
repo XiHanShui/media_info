@@ -23,7 +23,8 @@
 - *产品定位*：比 MediaInfo 更深地展示容器原始结构——带偏移量、长度、可下钻到 hex——而不是重造一张字段表。
 - *视图形态*：语义字段 + 结构树，两个视图。
 - *MVP 格式集*：WAV / AIFF / FLAC / MP3（音频方向）+ MP4·MOV / MKV·WebM（视频方向）。**两个方向都必须覆盖**，不允许只做一个方向。
-- *解析引擎*：纯 Dart 手写，每格式一个解析器，共享统一节点模型，以「解析器注册表」为扩展点。**MVP 不引入任何原生依赖**（FFmpeg / MediaInfoLib / C++ 均排除在本 effort 之外）。**理由（已被[现成方案的结构深度](issues/03-mediainfo-ffprobe-depth.md)改写）**：我们要的是**原始结构 + 结构化数据**，而现成方案给的是**解读 + 文本 blob**（MediaInfo 的 MediaTrace 是它自己的语义解读树、块名被替换、未知块被折叠、只给预渲染 XML、无 hex；FFmpeg 根本没有块树）。且引入任一原生库会立刻加上"必须有 macOS 构建机"的硬约束——`flutter build macos` 在非 macOS 主机上直接报错退出。
+- *解析引擎*：纯 Dart 手写，**解析层分三层**——① 规格表（声明式数据，每格式一张：MP4 box 表 / Matroska element 表 / RIFF chunk 表 / FLAC block 表）；② 通用容器引擎（代码只写一次：读头 → 查表 → 走字段 → 递归 → 产出统一节点）；③ 叶子提取器（少量手写，从已解析的树里取语义字段，不重复解析字节）。**MVP 不引入任何原生依赖**（FFmpeg / MediaInfoLib / C++ 均排除在本 effort 之外）。**理由（已被[现成方案的结构深度](issues/03-mediainfo-ffprobe-depth.md)改写）**：我们要的是**原始结构 + 结构化数据**，而现成方案给的是**解读 + 文本 blob**（MediaInfo 的 MediaTrace 是它自己的语义解读树、块名被替换、未知块被折叠、只给预渲染 XML、无 hex；FFmpeg 根本没有块树）。且引入任一原生库会立刻加上"必须有 macOS 构建机"的硬约束——`flutter build macos` 在非 macOS 主机上直接报错退出。**Dart 生态无可用的通用声明式二进制解析库**（见[声明式规格表](issues/02-declarative-parsers.md)），需自建 DSL + 引擎。
+- *注册表扩展点*：形状不变、粒度变细——注册表登记的是**规格表 + 可选的叶子提取器**，不是解析器对象。第三方加一个新容器 = 写一张表。
 - *语义字段深度*：轨道级（分辨率、帧率、采样率、位深、声道数、推算的平均码率）。**不做**编码参数级（profile / level / 色度 / 真实码率）。
 - *文件打开*：拖放 + 文件选择器 + 多标签页。命令行参数不进 MVP。
 - *导出*：右键复制字段值 + 导出 JSON。CSV 不做。
@@ -41,6 +42,8 @@
 
 - [macOS 验证环境确认](issues/05-macos-verification-env.md): Windows 优先、macOS 随后由用户自验；验收标准 = 构建成功 + 手动点过主流程；不需要自托管 runner。
 - [MediaInfo / ffprobe 到底能给出多深的结构](issues/03-mediainfo-ffprobe-depth.md): FFmpeg 彻底出局（无 box 树、AVIO_FLAG_TRACE 已不存在）；MediaInfo 有真块树（MediaTrace，带 offset+size）但那是它的**解读树**、只能拿到预渲染 XML、无 hex——**前提成立，理由改写**。
+- [容器格式能否用声明式规格表描述](issues/02-declarative-parsers.md): 声明式可行，但只覆盖**结构树**层；解析层定为**三层**——规格表 + 通用容器引擎 + 叶子提取器。Dart 生态无可用声明式二进制解析库（binstruct 能力不足、Kaitai 无 Dart 运行时、mediaindex_dart SDK 约束过旧），需自建 DSL + 引擎（约 300–500 行）。
+- [测试素材获取与归档](issues/04-test-fixtures.md): 素材全部由本机 ffmpeg 本地确定性生成，不下载外部内容；`test/fixtures/` 24 个文件约 550 KB，随仓库提交，不需 LFS。
 
 ## Not yet specified
 
