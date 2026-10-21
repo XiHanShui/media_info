@@ -355,26 +355,14 @@ final FormatSpec flacFormat = FormatSpec(
   container: flacContainerSpec,
   extractor: extractFlacFields,
   detect: isFlacFile,
+  // FLAC 必须走自己的解析器：通用引擎表达不了文件级魔数 `fLaC`，也表达不了块头的
+  // `last-metadata-block` 标志位——直接 parseContainer 会把魔数当成块头读，结果是错的。
+  // 挂了 parser 之后，调用方统一走核心的 parseFormat()，不需要按格式分支。
+  parser: parseFlac,
 );
 
 /// 把 FLAC 注册进全局格式注册表。
 void registerFlacFormat() => registerFormat(flacFormat);
-
-/// 按格式注册项解析一个容器。
-///
-/// **FLAC 必须走这条路径**：通用引擎表达不了 FLAC 的文件级魔数 `fLaC` 与块头
-/// 的 `last-metadata-block` 标志位，直接 `parseContainer(format.container, …)`
-/// 解析 FLAC 会把魔数当成块头读，结果是错的。其它格式照旧走 [parseContainer]。
-ParseResult parseFormatContainer(
-  FormatSpec format,
-  ByteSource source, {
-  int depth = 1,
-}) {
-  if (format.name == flacFormat.name) {
-    return parseFlac(source, depth: depth);
-  }
-  return parseContainer(format.container, source, depth: depth);
-}
 
 /// 按内容嗅探：文件头是不是 FLAC 魔数。
 bool isFlacFile(ByteSource source) {
