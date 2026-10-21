@@ -17,10 +17,20 @@ import 'package:flutter/material.dart';
 
 import '../core/node.dart';
 import '../core/tag.dart';
+import 'export.dart';
 import 'parse_service.dart';
 
 /// 推算值标记的后缀。
 const String kDerivedSuffix = '（推算）';
+
+/// 右键菜单里「复制」这一项的值。
+const String _kCopyMenuValue = 'copy';
+
+/// 右键菜单里「复制」这一项的文案。
+const String _kCopyMenuLabel = '复制';
+
+/// 复制成功后的提示文案前缀。
+const String _kCopiedMessage = '已复制';
 
 /// 左栏：语义字段视图。
 class SemanticView extends StatelessWidget {
@@ -133,53 +143,56 @@ class _FieldRow extends StatelessWidget {
       color: theme.colorScheme.onSurfaceVariant,
     );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: <Widget>[
-                    Flexible(child: Text(field.label, style: labelStyle)),
-                    if (derived) ...<Widget>[
-                      const SizedBox(width: 4),
-                      Text(
-                        kDerivedSuffix,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.tertiary,
-                          fontStyle: FontStyle.italic,
+    return _CopyableRow(
+      value: formatCopiedFieldValue(field),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: <Widget>[
+                      Flexible(child: Text(field.label, style: labelStyle)),
+                      if (derived) ...<Widget>[
+                        const SizedBox(width: 4),
+                        Text(
+                          kDerivedSuffix,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.tertiary,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
-                ),
-                Text(field.key, style: keyStyle),
-              ],
+                  ),
+                  Text(field.key, style: keyStyle),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          // 值用 Flexible：长值换行，不撑破左栏。
-          Flexible(
-            flex: 2,
-            child: Text(
-              formatFieldValue(field.value),
-              style: valueStyle,
-              textAlign: TextAlign.right,
+            const SizedBox(width: 12),
+            // 值用 Flexible：长值换行，不撑破左栏。
+            Flexible(
+              flex: 2,
+              child: Text(
+                formatFieldValue(field.value),
+                style: valueStyle,
+                textAlign: TextAlign.right,
+              ),
             ),
-          ),
-          if (field.unit != null && field.unit!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 3),
-              child: Text(field.unit!, style: unitStyle),
-            ),
-        ],
+            if (field.unit != null && field.unit!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(left: 3),
+                child: Text(field.unit!, style: unitStyle),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -194,35 +207,92 @@ class _TagRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Expanded(
-            flex: 3,
-            child: Text(
-              tag.key,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontFamily: 'monospace',
+    return _CopyableRow(
+      value: formatCopiedTagValue(tag),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              flex: 3,
+              child: Text(
+                tag.key,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 2,
-            child: Text(
-              formatFieldValue(tag.value),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontFamily: 'monospace',
+            const SizedBox(width: 12),
+            Flexible(
+              flex: 2,
+              child: Text(
+                formatFieldValue(tag.value),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontFamily: 'monospace',
+                ),
+                textAlign: TextAlign.right,
               ),
-              textAlign: TextAlign.right,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+/// 整行可右键复制的包装。
+///
+/// 右键 → 弹出「复制」菜单 → 点了就把这一行的值复制到剪贴板
+/// （user story 16）。
+class _CopyableRow extends StatelessWidget {
+  const _CopyableRow({required this.value, required this.child});
+
+  /// 右键复制时写进剪贴板的文本。
+  final String value;
+
+  /// 行的内容。
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onSecondaryTapDown: (TapDownDetails details) =>
+          _copyValueFromMenu(context, details.globalPosition, value),
+      child: child,
+    );
+  }
+}
+
+/// 弹出「复制」菜单，点了就把 [value] 复制到剪贴板并给出提示。
+Future<void> _copyValueFromMenu(
+  BuildContext context,
+  Offset globalPosition,
+  String value,
+) async {
+  final selected = await showMenu<String>(
+    context: context,
+    position: RelativeRect.fromLTRB(
+      globalPosition.dx,
+      globalPosition.dy,
+      globalPosition.dx,
+      globalPosition.dy,
+    ),
+    items: const <PopupMenuEntry<String>>[
+      PopupMenuItem<String>(
+        value: _kCopyMenuValue,
+        child: Text(_kCopyMenuLabel),
+      ),
+    ],
+  );
+  if (selected != _kCopyMenuValue) return;
+
+  await copyTextToClipboard(value);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text('$_kCopiedMessage：$value')));
 }
 
 /// 空区段的提示。
