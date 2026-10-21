@@ -18,6 +18,16 @@ Project name in the graph: **`G-WS-media_info`** (reindex with `index_repository
 
 **Use the graph, not grep, for discovery.** It already caught things grep missed: two parallel dispatch entry points (`registry.parseFormat` vs. a format module's own copy) and a `FormatSpec.parser` that was never wired on one format.
 
+**What the graph is and isn't good for, on this repo:**
+
+| Reliable | Not reliable |
+|---|---|
+| What exists (classes, functions, modules, imports) | `cognitive` / `complexity` — always 0 for Dart |
+| Cross-file call structure | `end_line` — Dart line spans are wrong (a 230-line function reported as 9) |
+| Which format modules register which `FormatSpec` | Intra-file private-helper calls (missing from `CALLS`) |
+
+So: use it for **discovery and wiring checks**; use `flutter analyze` + `dart format` + the test suite for size, complexity and style.
+
 ## Toolchain (this machine)
 
 - Flutter `3.41.6` stable at `G:\SDK\flutter` (on `PATH`), Dart `3.11.4`.
