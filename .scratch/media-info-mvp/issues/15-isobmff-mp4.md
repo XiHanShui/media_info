@@ -1,6 +1,6 @@
 # ISO BMFF（MP4 / MOV）：规格表 + 叶子提取器
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 13
 
 ## Question / 任务
@@ -42,3 +42,23 @@ Blocked by: 13
 **扩展名不符也要能正确识别**：测试里把本格式的样本复制成**错误的扩展名**（例如 `mislabelled.wav`）到临时目录，断言 `detectFormat` 仍返回本格式。
 
 **约束**：纯 Dart，无新依赖。`flutter analyze` 无 issue。
+
+## Answer
+
+已实现并合并进 `integration/media-info-mvp`。公开 API：`isoBmffContainer`（规格表，rootType = `'MP4'`）、`extractIsoBmffFields(root)`、`mp4Format`（含 `detect`）、`registerMp4()`。
+
+**规格表要点**：`sizeFirst: true`（size 在 type 之前）、`sizeIncludesHeader: true`、`sizeZeroMeansToEof: true`、`extendedSizeWhenOne: true`（`largesize`）。`dref` 额外用 `prefixBytes: 8` 跳过 version/flags + entry_count，于是 `dref > url ` 能进树。`stsd` 用 `dispatchOn: 'sample_entry_type'` 做动态分派——**二级表必须复制到当前容器（`stbl`）的 children map 里**，因为引擎的 dispatch 先查 `scopes[0]`。
+
+**三个需要下游知道的限制**：
+
+1. **sample entry 不是独立的树节点**。引擎的 dispatch 语义是：二级表的字段被读进**分派者（`stsd`）那个节点**。所以 `avcC`/`hvcC`/`esds`/`colr` 虽然在表里声明为不透明叶子，**它们不会出现在树里**。原因是 sample entry 的载荷头长度随 type/version 变（visual 78 B、audio 28 B ISO / 44 B QuickTime-v1），`prefixBytes` 是定长的，跳不过去。
+2. **`mvhd`/`tkhd`/`mdhd` 只按 version-0 布局解析**。引擎没有"按 version 决定字段宽度"的能力，所以 version==1 时提取器**主动丢弃** duration/timescale 相关字段，而不是输出垃圾值。
+3. **`stts`/`stsz`/`stz2`/`stsc`/`stco`/`elst` 的载荷体是 `bytes` 字段**（`Uint8List` 装在 `SemanticField.value` 里），由提取器手写读取器解码——引擎表达不了交织数组和运行期位宽。`stz2` 的 4/8/16 位宽（含半字节打包）有专门的合成文件测试。
+
+**解析深度**：完整 MP4 树需要 `depth >= 6`（root→moov→trak→mdia→minf→stbl→stsd），测试用 `depth: 8`。提取器不重读字节，只看节点树，所以依赖这个深度。
+
+**轨道时长**取 `elst` 的 segment duration ÷ movie timescale（与 ffprobe 一致：视频 1.0 s、音频 0.25 s），回退到 `mdhd` duration ÷ `mdhd` timescale。
+
+**格式名**：MOV 也叫 `'MP4'`，靠 `ftyp` 的 brand 区分（`brand` / `compatible_brands` 字段已产出）。`detect` 只看偏移 4 是不是 `ftyp`——**没有 `ftyp` 的传统 QuickTime 文件不会被识别**。
+
+**验证**：`flutter analyze` 无 issue；`flutter test` 118 个全过（本票新增 13 个）；`dart format` 已应用。

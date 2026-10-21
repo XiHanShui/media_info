@@ -1,6 +1,6 @@
 # RIFF 家族（WAV / AIFF）：规格表 + 叶子提取器
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 13
 
 ## Question / 任务
@@ -40,3 +40,21 @@ Blocked by: 13
 **扩展名不符也要能正确识别**：测试里把本格式的样本复制成**错误的扩展名**（例如 `mislabelled.wav`）到临时目录，断言 `detectFormat` 仍返回本格式。
 
 **约束**：纯 Dart，无新依赖。`flutter analyze` 无 issue。
+
+## Answer
+
+已实现并合并进 `integration/media-info-mvp`。公开 API：`wavFormat` / `aiffFormat` / `registerWav()` / `registerAiff()` / `parseWav` / `parseAiff` / `extractWavFields` / `extractAiffFields` / `decodeExtended80` / `decodeWaveFormatExExtension`。
+
+**规格表**：`sizeIncludesHeader: false`（RIFF 长度只算载荷）、`endian: Endian.little`（WAV）/ 大端（AIFF）、`padTo: 2`（奇数长度补 1 字节）、`unknownSizeAllowed: true`（RIFF 约定 `0xFFFFFFFF` 是"长度未知"哨兵——**不开这个，`.liesize.wav` 的 RIFF 块会被误判成整文件截断，`fmt `/`data` 全丢**）。`fmt ` 是 tagged union，用 `dispatchOn: 'wFormatTag'` 表达。
+
+**两个手写逃生口**（表表达不了）：
+
+- **AIFF 的 sample rate 是 80 位 IEEE 扩展精度浮点**，DSL 无此类型 → 按 10 字节读出再手写换算（`decodeExtended80`）。
+- **WAV 的 `fmt ` 扩展**（`WAVEFORMATEXTENSIBLE` 的 validBits/channelMask/SubFormat）手写读取，但按"不做编码参数级字段"的规则**不产出为语义字段**，只留在 `fmt ` 节点的 extension 字段里。
+
+**整合期的两处修改**（我自己改的，agent 的实现本身是对的）：
+
+1. 挂了 `parser: parseWav` / `parser: parseAiff` 到 `FormatSpec`——**调用方因此不需要知道 WAV/AIFF 的 quirks**，统一走核心的 `parseFormat()`。
+2. 核心补了 `HeaderRule.prefixBytes`（见票 13）。**RIFF 模块内部仍用 window+rebase 方案**（自己切出子块区间再平移偏移），因为它已实现且测试通过；对外接口不受影响。
+
+**验证**：`flutter analyze` 无 issue；全量测试通过；`dart format` 0 变更。
