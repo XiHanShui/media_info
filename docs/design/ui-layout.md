@@ -52,6 +52,25 @@ class TrackFields {
 }
 ```
 
+**文件级字段的补齐规则（重要）**：
+
+各格式的提取器吐出的文件级字段**并不一致**：
+
+| 字段 | MP4 | Matroska | RIFF/AIFF | FLAC | MP3 |
+|---|---|---|---|---|---|
+| `file_name` | ✗ | ✗ | ✗ | ✗ | ✗ |
+| `file_size` | ✗ | **✓** | ✗ | ✗ | ✗ |
+| `container_format` | ✗（用 `brand` 代替） | **✓** | ✗ | ✗ | ✗ |
+
+所以 **parse service 必须统一补齐** `file_name` / `file_size` / `container_format` 三个键，规则是：
+
+1. 先从提取器结果里**按 key 移除**同名的已有字段（Matroska 会带来 `file_size` 和 `container_format`），
+2. 再统一塞入这三个由 parse service 自己算出来的值。
+
+**不能简单 append**——否则 Matroska 文档的 `file_size` 会出现两次。
+
+`container_format` 的取值：MP4 用 `ftyp` 的 major brand（`isom` / `qt  ` / `mp42`…）——`qt  ` 意味着 QuickTime；Matroska 用 EBML 的 DocType（`matroska` / `webm`）；其它格式用格式名（`WAV` / `AIFF` / `FLAC` / `MP3`）。
+
 **左栏三个区段**（顺序固定）：
 
 1. **文件级** —— `fileFields`（`scope == FieldScope.file`）
