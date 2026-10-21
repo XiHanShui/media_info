@@ -33,3 +33,13 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 - **Triage issues** (implementation work): `Status:` holds a triage role string (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`).
 - **Wayfinder tickets** (decisions): `Status:` holds `claimed` or `resolved`. Wayfinder tickets are decisions, not implementation work, so they never carry a triage role.
+
+## Implementation tickets
+
+Implementation tickets live in the same `issues/` directory and are numbered continuously after the decision tickets.
+
+- `Status: ready-for-agent` — queued, not started.
+- `Status: resolved` — implemented, verified, and merged into the integration branch. The ticket body gains an `## Answer` section recording what was built and where it lives.
+
+Work lands on the integration branch (`integration/media-info-mvp`); each ticket is developed on its own `feature/*` branch in its own git worktree, then merged into the integration branch.
+
