@@ -98,9 +98,7 @@ class _StructurePaneState extends State<StructurePane> {
         if (selected != null) ...<Widget>[
           const Divider(height: 1),
           SizedBox(
-            height: _hexCollapsed
-                ? kHexPanelCollapsedHeight
-                : kHexPanelHeight,
+            height: _hexCollapsed ? kHexPanelCollapsedHeight : kHexPanelHeight,
             child: HexView(
               node: selected,
               filePath: widget.filePath,

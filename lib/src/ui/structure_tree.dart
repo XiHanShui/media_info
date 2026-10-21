@@ -54,6 +54,14 @@ final RegExp _hexElementId = RegExp(r'^0x[0-9A-Fa-f]+$');
 /// 重复的 key 会让 Flutter 的元素树错位。
 String _rowKey(String path) => path.isEmpty ? 'root' : path;
 
+/// 等宽字体的跨平台回退列表。
+const List<String> kMonoFontFallback = <String>[
+  'Consolas',
+  'Menlo',
+  'Courier New',
+  'monospace',
+];
+
 /// 结构树视图。
 class StructureTree extends StatefulWidget {
   const StructureTree({
@@ -110,12 +118,6 @@ class _StructureTreeState extends State<StructureTree> {
 
   /// 当前解析深度。
   int _depth = kDefaultStructureDepth;
-
-  @override
-  void initState() {
-    super.initState();
-    _depth = kDefaultStructureDepth;
-  }
 
   @override
   void didUpdateWidget(StructureTree oldWidget) {
@@ -241,7 +243,11 @@ class _StructureTreeState extends State<StructureTree> {
       if (!_expanded.contains(key)) return;
       final children = effective.children;
       for (var index = 0; index < children.length; index++) {
-        visit(children[index], key.isEmpty ? '$index' : '$key.$index', depth + 1);
+        visit(
+          children[index],
+          key.isEmpty ? '$index' : '$key.$index',
+          depth + 1,
+        );
       }
     }
 
@@ -266,7 +272,7 @@ class _StructureTreeState extends State<StructureTree> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _TreeHeader(fileSize: widget.fileSize),
+        _TreeHeader(),
         Expanded(
           child: ListView.builder(
             itemCount: rows.length,
@@ -319,9 +325,7 @@ class _TreeRow {
 
 /// 表头：列的含义。
 class _TreeHeader extends StatelessWidget {
-  const _TreeHeader({required this.fileSize});
-
-  final int fileSize;
+  const _TreeHeader();
 
   @override
   Widget build(BuildContext context) {
@@ -386,29 +390,14 @@ class _TreeRowWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mono = theme.textTheme.bodySmall?.copyWith(
-      fontFamilyFallback: const <String>[
-        'Consolas',
-        'Menlo',
-        'Courier New',
-        'monospace',
-      ],
+      fontFamilyFallback: kMonoFontFallback,
     );
-    final typeStyle = (selected
-            ? theme.textTheme.bodySmall?.copyWith(
-                fontFamilyFallback: const <String>[
-                  'Consolas',
-                  'Menlo',
-                  'Courier New',
-                  'monospace',
-                ],
-                fontWeight: FontWeight.w600,
-              )
-            : mono)
-        ?.copyWith(
-          color: selected
-              ? theme.colorScheme.onPrimaryContainer
-              : theme.colorScheme.onSurface,
-        );
+    final typeStyle = mono?.copyWith(
+      fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+      color: selected
+          ? theme.colorScheme.onPrimaryContainer
+          : theme.colorScheme.onSurface,
+    );
 
     return InkWell(
       key: ValueKey<String>('structure-row-${_rowKey(row.key)}'),
@@ -419,11 +408,7 @@ class _TreeRowWidget extends StatelessWidget {
         child: Row(
           children: <Widget>[
             SizedBox(width: row.depth * 14.0),
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: _toggleButton(context),
-            ),
+            SizedBox(width: 18, height: 18, child: _toggleButton(context)),
             Expanded(
               child: Text(
                 structureNodeLabel(row.node.type),

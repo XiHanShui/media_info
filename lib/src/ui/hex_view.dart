@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import '../core/byte_source.dart';
 import '../core/errors.dart';
 import '../core/node.dart';
+import 'structure_tree.dart';
 
 /// 默认最多显示的字节数（大块不能一次读几 GB）。
 const int kDefaultHexByteLimit = 4096;
@@ -163,7 +164,9 @@ class _HexViewState extends State<HexView> {
         });
         return;
       }
-      final wanted = node.size < widget.byteLimit ? node.size : widget.byteLimit;
+      final wanted = node.size < widget.byteLimit
+          ? node.size
+          : widget.byteLimit;
       final count = available < wanted ? available : wanted;
       final bytes = source.read(node.offset, count);
       setState(() {
@@ -211,12 +214,7 @@ class _HexViewState extends State<HexView> {
     }
     final lines = hexDumpLines(_bytes, baseOffset: _baseOffset);
     final mono = theme.textTheme.bodySmall?.copyWith(
-      fontFamilyFallback: const <String>[
-        'Consolas',
-        'Menlo',
-        'Courier New',
-        'monospace',
-      ],
+      fontFamilyFallback: kMonoFontFallback,
       height: 1.25,
     );
 
@@ -299,7 +297,7 @@ class _HexViewState extends State<HexView> {
           ),
           const SizedBox(width: 12),
           Text(
-            node.type,
+            structureNodeLabel(node.type),
             style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),

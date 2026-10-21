@@ -24,8 +24,9 @@ ContainerNode testNode(
   fields: fields,
 );
 
-Widget appOf(Widget child) =>
-    MaterialApp(home: Scaffold(body: SizedBox(width: 800, child: child)));
+Widget appOf(Widget child) => MaterialApp(
+  home: Scaffold(body: SizedBox(width: 800, child: child)),
+);
 
 void main() {
   testWidgets('结构树列出根节点与它的子块', (WidgetTester tester) async {
@@ -68,9 +69,12 @@ void main() {
       0,
       100,
       children: <ContainerNode>[
-        testNode('moov', 32, 68, children: <ContainerNode>[
-          testNode('trak', 40, 60),
-        ]),
+        testNode(
+          'moov',
+          32,
+          68,
+          children: <ContainerNode>[testNode('trak', 40, 60)],
+        ),
       ],
     );
 
@@ -97,9 +101,7 @@ void main() {
       'MP4',
       0,
       100,
-      children: <ContainerNode>[
-        testNode('mdat', 32, 68, isOpaque: true),
-      ],
+      children: <ContainerNode>[testNode('mdat', 32, 68, isOpaque: true)],
     );
 
     await tester.pumpWidget(
@@ -140,9 +142,7 @@ void main() {
     expect(selected!.offset, 32);
   });
 
-  testWidgets('展开没有子块的节点时按更大深度重新解析', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('展开没有子块的节点时按更大深度重新解析', (WidgetTester tester) async {
     final root = testNode(
       'MP4',
       0,
@@ -154,9 +154,12 @@ void main() {
       0,
       100,
       children: <ContainerNode>[
-        testNode('moov', 32, 68, children: <ContainerNode>[
-          testNode('trak', 40, 60),
-        ]),
+        testNode(
+          'moov',
+          32,
+          68,
+          children: <ContainerNode>[testNode('trak', 40, 60)],
+        ),
       ],
     );
     final depths = <int>[];
