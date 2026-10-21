@@ -27,6 +27,8 @@ Map: [media_info MVP 规格](map.md)
 
 MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV/WebM（视频方向）。解析全部用纯 Dart 手写实现，不引入任何原生依赖。
 
+**格式一律由文件内容判定，扩展名只作提示。** 一个叫 `movie.mp4` 的文件完全可能是 Matroska、甚至就是 WAV。应用按内容嗅探与解析；当扩展名与实际格式不符时，界面明确提示（「扩展名 `.wav` 与实际格式 `MP4` 不符」）——是提示不是报错，解析照实际内容走。
+
 ## 未决事项
 
 **（无——12 张决策票已全部解完，结论已回写进本规格。）**
@@ -34,6 +36,8 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 若后续出现新的待决项（例如构建期发现某个格式的表表达不出来），按 wayfinder 的方式在地图上开新票，并在此处登记。
 
 **决策票与结论的索引**见 [地图的 Decisions so far](map.md)。
+
+**实现票**（13–27 号）与实现层契约见 `docs/design/core-api.md`。
 
 ## User Stories
 
@@ -109,6 +113,8 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 50. As a 音视频工程师, I want 工具本身不联网、不上传文件, so that 我的素材不会外泄。
 51. As a 开发者, I want 项目的解析器易于新增格式, so that 我以后加 AVI/ASF/MPEG-TS 不用重构架构。
 52. As a 开发者, I want 每个格式的解析都有可复现的样本与断言, so that 我改了解析逻辑能立刻知道有没有破坏别的格式。
+53. As a 音视频工程师, I want 应用按文件内容判定格式而不是信扩展名, so that 一个后缀写错但内容是 MP4 的文件也能正确解析。
+54. As a 音视频工程师, I want 在扩展名与实际格式不一致时看到明确提示, so that 我知道这个文件的真实身份、也不会误以为程序认错了。
 
 ## Implementation Decisions
 
