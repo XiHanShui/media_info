@@ -5,6 +5,8 @@ Blocked by: 13
 
 ## Question / 任务
 
+**模块导出约定**：创建 `lib/src/formats/isobmff.dart`，导出 `FormatSpec get mp4Format`（MOV 也用它，用 brand 区分）、`void registerMp4()`。**不要在 import 时做注册副作用**，也不要创建 `all_formats.dart`（那是实现票 20 的统一入口）。
+
 实现 **ISO base media file format**（MP4 / MOV）的规格表与语义字段提取。这是**四种格式里最复杂的一个**。
 
 **必读**：`docs/design/core-api.md`、[调研 02](../../docs/research/02-declarative-parsers.md) §1.1 与 §4（不规则点清单）、[调研 03](../../docs/research/03-mediainfo-ffprobe-depth.md) §C.3。

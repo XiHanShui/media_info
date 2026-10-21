@@ -5,6 +5,8 @@ Blocked by: 13
 
 ## Question / 任务
 
+**模块导出约定**：创建 `lib/src/formats/riff.dart`，导出 `FormatSpec get wavFormat`、`FormatSpec get aiffFormat`、`void registerWav()`、`void registerAiff()`。**不要在 import 时做注册副作用**，也不要创建 `all_formats.dart`（那是实现票 20 的统一入口）。
+
 用核心引擎实现 **RIFF 家族**（WAV、AIFF）的规格表与语义字段提取。
 
 **必读**：`docs/design/core-api.md`、[统一语义字段词表](08-field-vocabulary.md)（字段键名与中文显示名以它为准）。
