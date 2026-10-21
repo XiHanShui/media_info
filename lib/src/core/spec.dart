@@ -109,6 +109,7 @@ class HeaderRule {
     this.vintId = false, // 类型用变长整数（EBML）
     this.endian = Endian.big, // 长度字段的字节序
     this.sizeFirst = false, // 长度字段排在类型字段之前（ISO BMFF）
+    this.prefixBytes = 0, // 容器载荷开头要跳过的字节数（RIFF 的 form type、FLAC 的 fLaC 魔数）
   });
 
   /// 类型字段字节数。
@@ -145,6 +146,16 @@ class HeaderRule {
   ///
   /// 默认 false = 类型在前（RIFF / EBML / FLAC 的块头）。
   final bool sizeFirst;
+
+  /// 容器载荷开头要跳过的字节数，跳过之后才是第一个子块。
+  ///
+  /// 有些容器的载荷不是直接跟子块，而是先跟一段固定的前缀：
+  /// - RIFF / AIFF / LIST：载荷开头 4 字节是 form type（`WAVE` / `AIFF` / `INFO`）
+  /// - FLAC：载荷开头 4 字节是 `fLaC` 魔数
+  ///
+  /// 不跳过的话，引擎会把这段前缀当成子块头去读，尺寸字段落在下一个块 id 上，
+  /// 报出假的"文件被截断"。默认 0 = 不跳过。
+  final int prefixBytes;
 }
 
 /// 一个子块的处理方式。

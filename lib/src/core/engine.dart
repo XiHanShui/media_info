@@ -391,10 +391,14 @@ _ChunkOutcome? _parseChunk({
         _Scope(childContainer.children, merged),
         ...scopes,
       ];
+      // 容器的载荷可能先跟一段固定前缀（RIFF 的 form type、FLAC 的 fLaC 魔数），
+      // 跳过它再读子块，否则前缀会被当成子块头读出假尺寸。
+      final prefix = childContainer.header.prefixBytes;
+      final childStart = payloadStart + (prefix > payloadSize ? payloadSize : prefix);
       children = _parseChildren(
         ctx: ctx,
         container: childContainer,
-        start: payloadStart,
+        start: childStart,
         end: payloadStart + payloadSize,
         level: level + 1,
         levels: levels,

@@ -56,6 +56,9 @@ FormatSpec get mp3Format => FormatSpec(
   container: _mp3Container,
   extractor: extractMp3Fields,
   detect: detectMp3,
+  // MP3 没有块树（是连续的帧序列），通用引擎表达不了 —— 走自己的解析器。
+  // 调用方统一用 parseFormat()，不需要按格式分支。
+  parser: parseMp3,
 );
 
 /// 注册 MP3 格式。重复注册安全（同名格式会被替换而不是重复登记）。
