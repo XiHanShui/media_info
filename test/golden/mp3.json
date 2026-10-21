@@ -1,0 +1,673 @@
+{
+  "format": "MP3",
+  "fixture": "mp3_cbr128_44100_stereo.normal.mp3",
+  "generator": "tool/gen_golden.dart",
+  "notes": [
+    "本文件由 `dart run tool/gen_golden.dart` 生成，请勿手工编辑。",
+    "每个节点最多记录 64 个子节点；超出时截断，并在该节点上标 childrenTruncated / childrenTotal。",
+    "MP3 的结构树是帧列表（一帧一个节点）：本样本共 12 帧，未触发 64 节点上限。"
+  ],
+  "tree": {
+    "type": "MP3",
+    "offset": 0,
+    "size": 5058,
+    "dataOffset": 0,
+    "dataSize": 5058,
+    "isOpaque": false,
+    "fields": [
+      {
+        "key": "duration",
+        "value": 0.313469387755102
+      },
+      {
+        "key": "overall_bitrate",
+        "value": 129084
+      },
+      {
+        "key": "codec",
+        "value": "MPEG-1 Layer 3"
+      },
+      {
+        "key": "sample_rate",
+        "value": 44100
+      },
+      {
+        "key": "channels",
+        "value": 2
+      }
+    ],
+    "children": [
+      {
+        "type": "ID3v2",
+        "offset": 0,
+        "size": 44,
+        "dataOffset": 10,
+        "dataSize": 34,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "id3v2_version",
+            "value": "4.0"
+          },
+          {
+            "key": "id3v2_flags",
+            "value": 0
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 44,
+        "size": 417,
+        "dataOffset": 48,
+        "dataSize": 413,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 0
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 417
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 461,
+        "size": 417,
+        "dataOffset": 465,
+        "dataSize": 413,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 0
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 417
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 878,
+        "size": 418,
+        "dataOffset": 882,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 1296,
+        "size": 418,
+        "dataOffset": 1300,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 1714,
+        "size": 418,
+        "dataOffset": 1718,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 2132,
+        "size": 418,
+        "dataOffset": 2136,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 2550,
+        "size": 418,
+        "dataOffset": 2554,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 2968,
+        "size": 418,
+        "dataOffset": 2972,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 3386,
+        "size": 418,
+        "dataOffset": 3390,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 3804,
+        "size": 418,
+        "dataOffset": 3808,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 4222,
+        "size": 418,
+        "dataOffset": 4226,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "MPEG Audio Frame",
+        "offset": 4640,
+        "size": 418,
+        "dataOffset": 4644,
+        "dataSize": 414,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "mpeg_version",
+            "value": "MPEG-1"
+          },
+          {
+            "key": "layer",
+            "value": 3
+          },
+          {
+            "key": "bitrate",
+            "value": 128
+          },
+          {
+            "key": "bitrate_mode",
+            "value": "CBR"
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channel_mode",
+            "value": "Joint Stereo"
+          },
+          {
+            "key": "padding",
+            "value": 1
+          },
+          {
+            "key": "samples_per_frame",
+            "value": 1152
+          },
+          {
+            "key": "frame_length",
+            "value": 418
+          },
+          {
+            "key": "crc_protected",
+            "value": false
+          }
+        ],
+        "children": []
+      }
+    ]
+  }
+}
