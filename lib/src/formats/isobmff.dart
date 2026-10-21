@@ -1340,27 +1340,18 @@ SemanticField _trackField(
 // 格式注册
 // ---------------------------------------------------------------------------
 
-/// 嗅探：看第 5~8 字节是不是 `ftyp`（ISO BMFF 的品牌盒）。
+/// 嗅探：偏移 4 处是不是 `ftyp`（ISO BMFF 的品牌盒）。
 ///
-/// 少数 QuickTime 文件没有 `ftyp`，开头就是 `moov`/`mdat`/`wide`，一并认下。
+/// 只看文件头，不参与扩展名判定——扩展名写成 `.wav` 的 MP4 也认。
 bool _detectIsoBmff(ByteSource source) {
   if (source.length < 8) return false;
-  final type = String.fromCharCodes(source.read(4, 4));
-  switch (type) {
-    case 'ftyp':
-    case 'moov':
-    case 'mdat':
-    case 'wide':
-    case 'free':
-    case 'skip':
-      return true;
-    default:
-      return false;
-  }
+  return String.fromCharCodes(source.read(4, 4)) == 'ftyp';
 }
 
 /// ISO BMFF（MP4 / MOV）的格式规格（供注册表登记）。
-const FormatSpec isoBmffFormat = FormatSpec(
+///
+/// MOV 也用它，靠 `ftyp` 里的 brand 区分。
+FormatSpec get mp4Format => FormatSpec(
   name: 'MP4',
   container: isoBmffContainer,
   extractor: extractIsoBmffFields,
@@ -1368,4 +1359,4 @@ const FormatSpec isoBmffFormat = FormatSpec(
 );
 
 /// 把 ISO BMFF（MP4 / MOV）登记到全局注册表。
-void registerIsoBmff() => registerFormat(isoBmffFormat);
+void registerMp4() => registerFormat(mp4Format);

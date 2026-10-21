@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_info/src/core/byte_source.dart';
 import 'package:media_info/src/core/engine.dart';
@@ -48,7 +50,8 @@ void main() {
     test('MP4 结构树覆盖关键块', () {
       final types = _typesOf(_parse(mp4).root);
 
-      // 样本里没有 'skip' / 'uuid' 块（ffmpeg 默认不写），故不在覆盖清单里断言。
+      // 样本里没有 'skip' / 'uuid' 块（ffmpeg 默认不写），它们由下面的
+      // 合成文件用例覆盖。
       expect(
         types,
         containsAll([
@@ -195,10 +198,44 @@ void main() {
     test('嗅探：ftyp 开头的文件被认成 MP4', () {
       clearFormats();
       addTearDown(clearFormats);
-      registerIsoBmff();
+      registerMp4();
 
       final source = FileByteSource.fromPath('test/fixtures/$mp4');
       expect(detectFormat(source)?.name, 'MP4');
+    });
+
+    test('嗅探：扩展名不符也能认出来', () {
+      clearFormats();
+      addTearDown(clearFormats);
+      registerMp4();
+
+      final dir = Directory.systemTemp.createTempSync('media_info_isobmff');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final mislabelled = File('${dir.path}/mislabelled.wav')
+        ..writeAsBytesSync(File('test/fixtures/$mp4').readAsBytesSync());
+
+      final source = FileByteSource.fromPath(mislabelled.path);
+      final detected = detectFormat(source);
+      source.close();
+      expect(detected?.name, 'MP4');
+    });
+
+    test('skip / uuid 块以不透明叶子留在结构树里', () {
+      final skip = _box('skip', [0, 0, 0, 0]);
+      final uuid = _box('uuid', List<int>.filled(16, 0xAB));
+      final ftyp = _box('ftyp', [...'isom'.codeUnits, 0, 0, 0, 0]);
+      final source = MemoryByteSource.of([...ftyp, ...skip, ...uuid]);
+
+      final result = parseContainer(isoBmffContainer, source, depth: 8);
+      expect(result.truncated, isFalse);
+
+      final types = result.root.children.map((c) => c.type).toList();
+      expect(types, containsAll(['ftyp', 'skip', 'uuid']));
+      for (final child in result.root.children) {
+        if (child.type == 'skip' || child.type == 'uuid') {
+          expect(child.isOpaque, isTrue);
+        }
+      }
     });
 
     test('stz2：样本大小位宽由载荷决定', () {
