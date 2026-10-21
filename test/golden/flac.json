@@ -1,0 +1,100 @@
+{
+  "format": "FLAC",
+  "fixture": "flac_s16_44100_stereo.normal.flac",
+  "generator": "tool/gen_golden.dart",
+  "notes": [
+    "本文件由 `dart run tool/gen_golden.dart` 生成，请勿手工编辑。",
+    "每个节点最多记录 64 个子节点；超出时截断，并在该节点上标 childrenTruncated / childrenTotal。"
+  ],
+  "tree": {
+    "type": "FLAC",
+    "offset": 0,
+    "size": 11450,
+    "dataOffset": 0,
+    "dataSize": 11450,
+    "isOpaque": false,
+    "fields": [],
+    "children": [
+      {
+        "type": "STREAMINFO",
+        "offset": 4,
+        "size": 38,
+        "dataOffset": 8,
+        "dataSize": 34,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "min_block_size",
+            "value": 4608
+          },
+          {
+            "key": "max_block_size",
+            "value": 4608
+          },
+          {
+            "key": "min_frame_size",
+            "value": 588
+          },
+          {
+            "key": "max_frame_size",
+            "value": 1288
+          },
+          {
+            "key": "sample_rate",
+            "value": 44100
+          },
+          {
+            "key": "channels",
+            "value": 2
+          },
+          {
+            "key": "bits_per_sample",
+            "value": 16
+          },
+          {
+            "key": "total_samples",
+            "value": 11025
+          },
+          {
+            "key": "md5",
+            "value": "f71656b039680036049eae0992606cfe"
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "VORBIS_COMMENT",
+        "offset": 42,
+        "size": 48,
+        "dataOffset": 46,
+        "dataSize": 44,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "vendor_length",
+            "value": 12
+          },
+          {
+            "key": "vendor",
+            "value": "Lavf61.3.104"
+          },
+          {
+            "key": "field_count",
+            "value": 1
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "PADDING",
+        "offset": 90,
+        "size": 8196,
+        "dataOffset": 94,
+        "dataSize": 8192,
+        "isOpaque": true,
+        "fields": [],
+        "children": []
+      }
+    ]
+  }
+}

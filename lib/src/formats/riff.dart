@@ -506,7 +506,7 @@ List<SemanticField> extractWavFields(ContainerNode root) {
       SemanticField(
         key: 'codec',
         label: '编码标识',
-        value: codec,
+        value: _waveFormatTagName(codec),
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'fmt ',
@@ -650,6 +650,27 @@ double? _duration(int? dataSize, Object? byteRate) {
 // ---------------------------------------------------------------------------
 // 嗅探与注册
 // ---------------------------------------------------------------------------
+
+/// WAV 的 `wFormatTag` 编码名。
+///
+/// 词表里 `codec`（编码标识）是给人看的标识：MP4 给 fourcc（`avc1`）、Matroska 给
+/// `V_VP9`、MP3 给 `MPEG-1 Layer 3`、AIFF 给 `NONE`。WAV 的原生标识是 `wFormatTag`
+/// 这个**整数**，直接显示 `1` 谁也看不懂，所以这里给出标准名称。
+/// 未登记的 tag 显示原始数值，不猜。
+String _waveFormatTagName(int tag) => switch (tag) {
+  0x0001 => 'PCM',
+  0x0002 => 'MS ADPCM',
+  0x0003 => 'IEEE Float',
+  0x0006 => 'A-law',
+  0x0007 => 'mu-law',
+  0x0011 => 'IMA ADPCM',
+  0x0031 => 'GSM 6.10',
+  0x0040 => 'MPEG Layer-3',
+  0x0050 => 'MPEG Layer-2',
+  0x0055 => 'MPEG Layer-1',
+  0xFFFE => 'EXTENSIBLE',
+  _ => 'wFormatTag=$tag',
+};
 
 /// 判断字节源偏移 [offset] 处是不是 ASCII 串 [text]。
 bool _hasAscii(ByteSource source, int offset, String text) {
