@@ -1,6 +1,7 @@
 # 字节访问与大文件策略
 
 Type: grilling
+Status: resolved
 Blocked by: 01
 
 ## Question
@@ -20,3 +21,13 @@ Blocked by: 01
 **为什么阻塞于[统一节点模型与双视图的数据来源](01-unified-node-model.md)**：节点模型决定了树里要不要带偏移量、以及能不能惰性展开——这两点直接决定本票的答案。
 
 **先例（来自[MediaInfo / ffprobe 到底能给出多深的结构](03-mediainfo-ffprobe-depth.md)）**：各容器的块头布局已知——ISO BMFF 是 8/16 字节 box 头（`size == 1` 走 64 位扩展，`size == 0` 表示到文件尾）；RIFF 是 `id + LE32 size`，容器型递归（`LIST`/`RIFF` 带 form type）；EBML 是 element id + VINT size（含"未知长度"哨兵）；FLAC 是元数据块（last-metadata-block 标志 + 24 位长度）；MP3 是帧头（ID3v2 前缀 + 帧序列），**这一档没有真正的块树**，按帧列表呈现即可。原始 hex 由 Dart 侧按 offset/size 自行从文件读取——不依赖任何外部库。
+
+## Answer
+
+- **字节访问用 `RandomAccessFile`**（`dart:io`），**绝不把文件整体读进内存**。引擎按需 `seek` + `read`，只读当前要解析的那一段。
+- **偏移与长度一律用 Dart 的 `int`**（64 位）→ 支持 >4GB 文件、MP4 的 `largesize`（32 位长度占位 + 64 位实际长度）与 `co64`（64 位 chunk offset）。
+- **惰性展开**：结构树初始只建到第一层（容器的直接子块）；某个块的子块在用户展开它时才解析。这样 moov 里上万个 `stts`/`stsc`/`stsz` 条目不会一次性全建。
+- **截断处理**：读到的字节少于声明长度时立即停止，该节点标记为截断，抛出可展示的错误（形如"文件在偏移 X 处截断，声明长度还差 N 字节"）。**已读到的部分结构仍然返回并显示**，不整份失败。
+- **长度字段撒谎**（声明长度 > 实际剩余）按同样的截断路径处理——不崩溃、不越界、不无限读。
+- 超出 4GB 的文件在 Windows 与 macOS 上都用同一个 `int` 偏移表达，不引入 `BigInt`。
+

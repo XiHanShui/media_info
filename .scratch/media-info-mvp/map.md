@@ -44,6 +44,14 @@
 - [MediaInfo / ffprobe 到底能给出多深的结构](issues/03-mediainfo-ffprobe-depth.md): FFmpeg 彻底出局（无 box 树、AVIO_FLAG_TRACE 已不存在）；MediaInfo 有真块树（MediaTrace，带 offset+size）但那是它的**解读树**、只能拿到预渲染 XML、无 hex——**前提成立，理由改写**。
 - [容器格式能否用声明式规格表描述](issues/02-declarative-parsers.md): 声明式可行，但只覆盖**结构树**层；解析层定为**三层**——规格表 + 通用容器引擎 + 叶子提取器。Dart 生态无可用声明式二进制解析库（binstruct 能力不足、Kaitai 无 Dart 运行时、mediaindex_dart SDK 约束过旧），需自建 DSL + 引擎（约 300–500 行）。
 - [测试素材获取与归档](issues/04-test-fixtures.md): 素材全部由本机 ffmpeg 本地确定性生成，不下载外部内容；`test/fixtures/` 24 个文件约 550 KB，随仓库提交，不需 LFS。
+- [统一节点模型与双视图的数据来源](issues/01-unified-node-model.md): **一棵节点树，两个视图都是投影**。节点持有 `type/offset/size/dataOffset/dataSize/isOpaque/children/fields`，字段持有 `key/label/value/unit/origin/scope/trackIndex/source`。契约见 `docs/design/core-api.md`。
+- [字节访问与大文件策略](issues/06-byte-access-large-files.md): `RandomAccessFile` 随机访问、不整体读入内存；偏移用 64 位 `int`；惰性展开（初始只建第一层）；截断与长度撒谎走同一条路径，**已解析的部分照常返回**。
+- [界面布局与多文件交互](issues/07-ui-layout-prototype.md): **左右分栏**——左语义字段（文件级/轨道级/标签三区段），右结构树，hex 面板在右栏下方展开；解析失败仍展示已读到的部分结构；树用虚拟滚动。
+- [统一语义字段词表](issues/08-field-vocabulary.md): 统一词表只管**键名**（英文技术名=代码标识符）；各格式原生字段名不丢，额外带 `source`。文件级 5 个 + 轨道级 10 个通用键，格式特有字段不进统一词表。
+- [标签 / 元数据与语义字段的边界](issues/09-tag-vs-field-boundary.md): 标签**单独成区**（左栏第三区段），与技术属性、容器技术属性三者划清；`GLOSSARY.md` 增补「标签」词条。
+- [CI 双平台构建](issues/10-ci-dual-platform.md): GitHub Actions 矩阵 `windows-latest` + `macos-latest`，Flutter 钉死 3.41.6；产物 Windows zip / macOS tar.gz；CI 上不设中国镜像环境变量；macOS 只保证构建成功。
+- [分发形态与签名](issues/11-distribution-form.md): **双端都发 zip**——Windows 免安装 zip，macOS `.app` 打 tar.gz；不签名/公证、不做安装包、不做自动更新。
+- [以 MediaTrace 作为结构树的离线校验基准](issues/12-mediatrace-offline-oracle.md): **不采纳**（CI 成本高、映射层是主要工作量、只单向可用）。替代：每个格式维护**块覆盖率清单**（人写规范，不继承别人的盲区）。
 
 ## Not yet specified
 

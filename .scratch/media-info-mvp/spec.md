@@ -27,20 +27,13 @@ Map: [media_info MVP 规格](map.md)
 
 MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV/WebM（视频方向）。解析全部用纯 Dart 手写实现，不引入任何原生依赖。
 
-## 未决事项（实现到这些区域前需先解票）
+## 未决事项
 
-| 决策 | 票 | 影响什么 |
-|---|---|---|
-| 统一节点模型与双视图的数据来源 | [统一节点模型与双视图的数据来源](issues/01-unified-node-model.md) | 节点 schema、字段挂哪一级、结构树是否惰性展开 |
-| 字节访问与大文件策略 | [字节访问与大文件策略](issues/06-byte-access-large-files.md) | 随机访问 vs 映射 vs 流式；64 位长度；截断文件行为 |
-| 界面布局与多文件交互 | [界面布局与多文件交互](issues/07-ui-layout-prototype.md) | 分栏形态、hex 侧栏位置、标签页组织 |
-| 统一语义字段词表 | [统一语义字段词表](issues/08-field-vocabulary.md) | 字段的英文技术名、中文显示名、跨格式归一方式 |
-| 标签 / 元数据与语义字段的边界 | [标签 / 元数据与语义字段的边界](issues/09-tag-vs-field-boundary.md) | MP4 udta/ilst、FLAC Vorbis Comment、ID3 要不要看 |
-| 以 MediaTrace 作为结构树的离线校验基准 | [以 MediaTrace 作为结构树的离线校验基准](issues/12-mediatrace-offline-oracle.md) | 要不要拿 MediaInfo 的输出当"有没有漏块"的对照基准 |
-| CI 双平台构建 | [CI 双平台构建](issues/10-ci-dual-platform.md) | 构建矩阵、产物形态、缓存 |
-| 分发形态与签名 | [分发形态与签名](issues/11-distribution-form.md) | 用户最终拿到 zip 还是安装包 |
+**（无——12 张决策票已全部解完，结论已回写进本规格。）**
 
-**其中两张是实现的前置**：节点模型、字节访问策略。其余可在对应模块开工前补齐。
+若后续出现新的待决项（例如构建期发现某个格式的表表达不出来），按 wayfinder 的方式在地图上开新票，并在此处登记。
+
+**决策票与结论的索引**见 [地图的 Decisions so far](map.md)。
 
 ## User Stories
 
@@ -140,28 +133,30 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 - **不引入的库**：`binstruct`（只有 8/16 位整数 + float32，补齐所需能力等于重写，且无维护者）、Kaitai `.ksy`（pub.dev 上没有 Dart 运行时）、`mediaindex_dart`（SDK 约束 `<3.0.0`，本机 resolve 不下来）、直接依赖 `ebml` 包（形态对但 2023-09 后未更新、只内置 EBML Header 表——但它的 `SchemaElement` 字段设计值得抄）。Dart 生态没有可用的通用声明式二进制解析库，需自建 DSL + 引擎（约 300–500 行）。
 - **先做纵切验证**：用最小表集实现 MP4 的 `moov → trak → mdia → minf → stbl → stsd`，确认 version 条件字段 + 动态 type 分派能在引擎里表达，再推广到其它三种格式。
 - 详细依据见 [调研 02](../../docs/research/02-declarative-parsers.md) 与 [调研 03](../../docs/research/03-mediainfo-ffprobe-depth.md)。
-- 节点模型统一承载两种视图：结构树与语义字段从同一份数据派生，节点携带名称、类型、偏移量、长度、字段值与子节点（确切 schema 待[统一节点模型与双视图的数据来源](issues/01-unified-node-model.md)定）。
-- 解析层是"N 个命令式解析器"还是"N 张声明式规格表 + 1 个通用引擎"，待[容器格式能否用声明式规格表描述](issues/02-declarative-parsers.md)结论；这个选择显著影响后续所有实现的工作量。
-- 字节读取策略、64 位长度（`largesize` / `co64`）、以及大文件下的惰性展开行为，待[字节访问与大文件策略](issues/06-byte-access-large-files.md)定。
-- 未知块与损坏文件必须降级展示，不能让整个解析失败——已读到的部分结构仍然呈现，错误以明确形式给出。
+- **节点模型**：一棵节点树，两个视图都是它的投影。节点持有 `type`/`offset`/`size`/`dataOffset`/`dataSize`/`isOpaque`/`children`/`fields`；语义字段持有 `key`（英文技术名）/ `label`（中文显示名）/ `value`/`unit`/`origin`（read 来自文件 / derived 推算）/`scope`（file / track）/`trackIndex`/`source`。节点**不持有字节内容**，只持有 offset 与 size，hex 视图按需从文件读。契约见 `docs/design/core-api.md`。
+- **字节访问**：`RandomAccessFile` 随机访问，绝不整体读入内存；偏移与长度一律用 64 位 `int`（支持 >4GB 文件、`largesize`、`co64`）。结构树**惰性展开**——初始只建第一层，子块在用户展开时才解析。
+- 未知块与损坏文件必须降级展示，不能让整个解析失败——已读到的部分结构仍然呈现，错误以明确形式给出。读到的字节少于声明长度时立即停止，标记「截断」并给出中文错误说明（"文件在偏移 X 处截断，声明长度还差 N 字节"）；长度字段撒谎走同一条路径，不越界、不无限读。
 - 语义字段做到**轨道级**：分辨率、帧率、采样率、位深、声道数、推算的平均码率。**不做**编码参数级（profile、level、色度采样、真实码率）。
-- 语义字段的英文技术名与中文显示名、跨格式归一规则，待[统一语义字段词表](issues/08-field-vocabulary.md)定。
-- 标签类内容（MP4 的 `udta`/`meta`/`ilst`、FLAC 的 Vorbis Comment、MP3 的 ID3）与语义字段的边界，待[标签 / 元数据与语义字段的边界](issues/09-tag-vs-field-boundary.md)定。
+- **字段词表**：统一词表只管**键名**（英文技术名 = 代码标识符 = 与规范逐字对照的术语）；各格式原生的字段名不丢，每个语义字段额外带 `source` 记着它来自哪个块的哪个字段。文件级 5 个键（`file_name`/`file_size`/`container_format`/`duration`/`overall_bitrate`）+ 轨道级 10 个键（`track_index`/`track_type`/`codec`/`width`/`height`/`frame_rate`/`sample_rate`/`bit_depth`/`channels`/`language`）。格式特有字段不进统一词表，挂在各格式自己的节点上。完整表见[统一语义字段词表](issues/08-field-vocabulary.md)。
+- **标签**（MP4 的 `udta`/`meta`/`ilst`、FLAC 的 Vorbis Comment、MP3 的 ID3v2）**单独成区**，与技术属性、容器技术属性三者划清；标签的 key 保留英文原名（不翻译）。
 
 **界面**
 
-- 两个视图并存：语义字段 + 结构树。分栏形态（左/右、上/下、Tab）与 hex 侧栏位置，待[界面布局与多文件交互](issues/07-ui-layout-prototype.md)原型确定。
+- **左右分栏**。左栏 = 语义字段视图（三个区段，顺序「文件级」→「轨道级」→「标签」）；右栏 = 结构树视图。hex 面板在**右栏下方**展开（选中块时出现，可折叠），标题显示该块的 type / offset / size。选中块时该块在树里高亮。
+- **标签单独成区**，排在轨道级之后，与技术属性不混排。标签的 key 保留英文原名（不翻译）。
 - 选中块时显示该块的原始 hex + ASCII 侧栏。
-- 文件打开方式：拖放 + 文件选择器 + 多标签页。命令行参数不进 MVP。
+- 文件打开方式：拖放 + 文件选择器 + 多标签页。命令行参数不进 MVP。`Ctrl+Tab` 在标签间切换，关闭标签不影响其它标签。
 - 每个标签页独立持有自己的解析状态；解析中、解析失败都有各自明确的视觉状态。
-- 结构树在条目极多时保持可滚动（虚拟化 / 惰性展开，由布局票与字节访问票共同定）。
-- 导出：右键复制单个字段值 + 导出整个结果为 JSON。CSV 不做。
+- 结构树用**虚拟滚动**；结构树的构建是**惰性展开**——初始只建到第一层，子块在用户展开时才解析。
+- 导出：右键复制单个字段值 + 导出整个结果为 JSON（同时包含语义字段与结构树）。CSV 不做。
+- 字段的**英文技术名永不翻译**（与规范逐字对照），中文只出现在界面显示名上。语义字段的来源（`read` 文件里直接写的 / `derived` 我们推算的）在界面上必须标出。
 
 **构建与分发**
 
-- GitHub Actions 上构建 Windows 与 macOS 两个平台；Flutter 版本钉死不用 `latest`；CI 不使用本机的中国镜像环境变量。
-- 用户最终拿到的产物形态（Windows 免安装 zip 还是安装包、macOS 的 .app zip 还是 .dmg）待[分发形态与签名](issues/11-distribution-form.md)定。
-- macOS 签名与公证不在本 effort 内。
+- GitHub Actions 矩阵 `windows-latest` + `macos-latest`；Flutter 版本**钉死 3.41.6**（对应本机 Dart 3.11.4），不用 `latest`；CI **不使用**本机的中国镜像环境变量（`PUB_HOSTED_URL` / `FLUTTER_STORAGE_BASE_URL`），保证本地与 CI 行为可比。触发条件为 push 到 `main`、打 tag、手动触发；**不在 PR 上跑**。
+- 产物：Windows 打 zip（`flutter build windows --release` 产出的是目录），macOS 把 `.app` 打 tar.gz。命名带版本号与平台。macOS 产物**只保证构建成功**，不做自动冒烟。
+- **双端都发 zip**：Windows 免安装 zip（解压即用，不写注册表、不需管理员权限）；macOS 把 `.app` 目录打 tar.gz，不做 .dmg（未公证的 app 本来就会被 Gatekeeper 拦，做成 .dmg 不改善这一点）。不做 Windows 安装包（Inno Setup / MSIX），不做自动更新。
+- macOS 签名与公证不在本 effort 内（需付费 Apple Developer 账号 + 人工申请）。
 
 **不做什么**
 
@@ -184,15 +179,16 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 
 **优先使用现有接缝** —— 仓库目前唯一的接缝是 `flutter_test` 提供的 `testWidgets`，应用级接缝直接沿用它；解析器级接缝用 `package:test`（已随 `flutter_test` 传递依赖提供），不引入新依赖。
 
-**先决条件** —— 没有样本文件，两条接缝都跑不起来。样本清单、来源、存放位置与命名规范待[测试素材获取与归档](issues/04-test-fixtures.md)定；该票未落定前不要开始写解析器，否则验证会退化成"拿手头随便一个文件试试"。
+**先决条件（已满足）** —— 样本素材已按[测试素材获取与归档](issues/04-test-fixtures.md)落定：24 个样本在 `test/fixtures/`，两条接缝现在都有语料可用。
 
 **既有测试的处理** —— 脚手架自带的计数器冒烟测试断言的是模板的 `MyApp` / `MyHomePage`，应用一旦重写就会失效，随第一批实现一并删除。
 
 **测试目标** —— 每个目标格式（WAV、AIFF、FLAC、MP3、MP4、MOV、MKV、WebM）至少覆盖三类样本：正常样本、边界样本（最小尺寸、罕见但合法的参数组合）、损坏样本（截断、长度字段撒谎、未知块）。
 
 **素材已就位** —— `test/fixtures/` 下 24 个样本，约 550 KB，全部由本机 ffmpeg 确定性生成（`dart run tool/gen_fixtures.dart` 可重现），不下载任何外部内容，因此随仓库提交，不需要 LFS。命名 `<格式>_<参数>.<类别>.<扩展名>`，类别为 `normal` / `edge` / `truncated` / `liesize`。**已知盲区**：素材只覆盖 ffmpeg 会写出的那种布局，真实世界里千奇百怪的文件（多个 `mdat` 的 MP4、`moov` 位于文件尾部的 MP4、fMP4 分片、非标准 mux 的 MKV）需要另行补充。
+**块覆盖率清单** —— golden 文件防的是回归，防不住「解析器从一开始就漏了某个块」（golden 也是我们自己产的，漏了就是两边一起漏）。因此每个格式额外维护一份**必须支持的块类型清单**（人写规范，不继承别人的盲区），测试断言这些块都能在结构树里找到。例如 MP4 至少要能找到 `ftyp`/`moov`/`trak`/`mdia`/`minf`/`stbl`/`stsd`/`mdat`/`free`/`skip`/`uuid`。MediaTrace 对照基准**已决定不采纳**（CI 成本高、映射层是主要工作量、只单向可用），见[以 MediaTrace 作为结构树的离线校验基准](issues/12-mediatrace-offline-oracle.md)。
 
-**已知的覆盖盲区** —— 用自己产的 golden 文件做基准，有一个结构性盲区：**"解析器从一开始就漏了某个块"这类 bug 测不出来**，因为 golden 也是我们自己产的，漏了就是两边一起漏。是否引入 MediaInfo 的 MediaTrace XML 作**离线**对照基准（只作 CI 里的对照工具，不进产品二进制；且只单向可用——"MediaTrace 有、我们没有"是我们错，"它漏了我们有"不一定），待 [以 MediaTrace 作为结构树的离线校验基准](issues/12-mediatrace-offline-oracle.md) 定。
+**已知盲区与对策** —— golden 文件防的是回归，防不住「解析器从一开始就漏了某个块」（golden 也是我们自己产的，漏了就是两边一起漏）。对策见下面的**块覆盖率清单**。MediaInfo 的 MediaTrace XML **已决定不采纳**作离线对照基准——CI 成本高、映射层是主要工作量、且只单向可用。
 
 ## Out of Scope
 
@@ -209,8 +205,8 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 
 **验收标准（Windows 与 macOS 统一）**：构建成功 + 手动点过主流程——启动应用 → 打开一个文件 → 同时看到语义字段与结构树 → 展开任意一个块并看到它的原始 hex。
 
-**术语**：本规格使用仓库根目录 `GLOSSARY.md` 定义的词汇——容器、块、轨道、语义字段、结构树。注意"块"统一涵盖 ISO base media 的 box、RIFF 的 chunk、EBML 的 element 三种叫法；"语义字段"专指从容器结构解读出的技术属性，与"标签"是不同概念（两者边界仍待定）。
+**术语**：本规格使用仓库根目录 `GLOSSARY.md` 定义的词汇——容器、块、轨道、语义字段、结构树。注意"块"统一涵盖 ISO base media 的 box、RIFF 的 chunk、EBML 的 element 三种叫法；"语义字段"专指从容器结构解读出的技术属性，与"标签"是不同概念（两者边界**已定案**：标签单独成区。）。
 
-**已知的一处待修**：`GLOSSARY.md` 目前把"元数据 / Metadata"列为"语义字段"的 avoid 词，这个划法在[标签 / 元数据与语义字段的边界](issues/09-tag-vs-field-boundary.md)定案前是暂定的。
+**术语已定案**：`GLOSSARY.md` 已增补「标签 (Tag)」词条，「语义字段」的定义补上"不含标签"，"元数据 / Metadata"继续留在 avoid 词里——在这个项目里"元数据"若泛指一切就等于没有边界。
 
-**与地图的关系**：本规格是 [media_info MVP 规格](map.md) 这张地图的终点产物。地图上的票全部解完、其结论回写进本规格后，本规格才算完整；在此之前，「未决事项」一节列出的区域带 TBD 标记。
+**与地图的关系**：本规格是 [media_info MVP 规格](map.md) 这张地图的终点产物。**12 张决策票已全部解完，结论已回写进本规格**——「未决事项」一节已清空，规格完整可实现。实现阶段的工作另开一组实现票跟踪。

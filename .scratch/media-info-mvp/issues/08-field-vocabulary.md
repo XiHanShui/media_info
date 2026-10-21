@@ -1,6 +1,7 @@
 # 统一语义字段词表
 
 Type: grilling
+Status: resolved
 Blocked by: 01
 
 ## Question
@@ -20,3 +21,44 @@ Blocked by: 01
 **为什么阻塞于[统一节点模型与双视图的数据来源](01-unified-node-model.md)**：字段挂在节点的哪一级（文件级 / 轨道级 / 块级）由节点模型决定。
 
 **注意**：本票**不覆盖**"标签/元数据"（那是[标签 / 元数据与语义字段的边界](09-tag-vs-field-boundary.md)），也不做编码参数级字段。
+
+## Answer
+
+**归一方式**：统一词表只管**键名**（英文技术名 = 代码标识符 = 与规范逐字对照的术语）；**各格式原生的字段名不丢**——每个语义字段额外携带 `source`，记着它是从哪个块的哪个字段读出来的（例如 `sample_rate` 的 source 是 `WAV fmt ` / `FLAC STREAMINFO` / `MP4 esds`）。
+
+### 文件级（所有格式共有）
+
+| key | 中文 | 单位 | origin | 备注 |
+|---|---|---|---|---|
+| `file_name` | 文件名 | — | read | |
+| `file_size` | 文件大小 | byte | read | |
+| `container_format` | 容器格式 | — | read | 如 `WAV` / `MP4` / `Matroska` |
+| `duration` | 时长 | s | read | 推不出来时为空 |
+| `overall_bitrate` | 平均码率 | bit/s | derived | 文件大小 ÷ 时长 |
+
+### 轨道级
+
+| key | 中文 | 单位 | origin | 备注 |
+|---|---|---|---|---|
+| `track_index` | 轨道序号 | — | read | |
+| `track_type` | 轨道类型 | — | read | `video` / `audio` / `subtitle` |
+| `codec` | 编码标识 | — | read | 原始 fourcc / codec id，**不翻译** |
+| `width` | 宽度 | px | read | 视频 |
+| `height` | 高度 | px | read | 视频 |
+| `frame_rate` | 帧率 | fps | read | 视频 |
+| `sample_rate` | 采样率 | Hz | read | 音频 |
+| `bit_depth` | 位深 | bit | read | 音频 |
+| `channels` | 声道数 | — | read | 音频 |
+| `language` | 语言 | — | read | 有则显示 |
+
+### 格式特有（不进统一词表，挂在各格式自己的节点上）
+
+FLAC 的 `total_samples`、`md5`；MP3 的 `mpeg_version`、`layer`、`bitrate_mode`；MP4 的 `timescale`、`handler_type`、`brand`；Matroska 的 `timestamp_scale`、`duration`（以 TimestampScale 为单位）。
+
+### 规则
+
+- **英文技术名永远不翻译**（对应 user story 47）；中文只出现在界面显示名。
+- 同一个 key 在不同格式下的值必须**同单位同含义**，否则不进统一词表，改用格式特有字段。
+- `origin` 区分「文件里直接写的」与「我们推算的」，界面必须标出（对应 user story 15）。
+- 轨道级字段挂在**对应轨道的节点**上，文件级字段挂在**根节点**上。
+

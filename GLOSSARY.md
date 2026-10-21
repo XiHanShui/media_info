@@ -25,8 +25,13 @@ _Avoid_: Stream, 流, 轨
 
 **语义字段 (Semantic Field)**:
 A decoded, human-meaningful value about a file or one of its tracks — duration, sample rate, bit depth,
-resolution — as opposed to the raw bytes it was derived from.
+resolution — as opposed to the raw bytes it was derived from. Excludes tags.
 _Avoid_: 元数据, Metadata, 属性, Property
+
+**标签 (Tag)**:
+A piece of metadata the author deliberately wrote into the file — title, artist, album, cover art. Kept
+apart from semantic fields, because it expresses intent rather than a decoded technical property.
+_Avoid_: 元数据, Metadata, 语义字段
 
 **结构树 (Structure Tree)**:
 The expandable view of a container's chunks, showing each chunk's name, type, offset, and size.
