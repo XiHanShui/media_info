@@ -14,8 +14,9 @@ ContainerNode testNode(String type, int offset, int size) => ContainerNode(
   dataSize: size,
 );
 
-Widget appOf(Widget child) =>
-    MaterialApp(home: Scaffold(body: SizedBox(width: 900, child: child)));
+Widget appOf(Widget child) => MaterialApp(
+  home: Scaffold(body: SizedBox(width: 900, child: child)),
+);
 
 /// 写一个临时文件，返回路径。
 String tempFile(String name, List<int> bytes) {
@@ -46,15 +47,11 @@ void main() {
     expect(lines.last, contains('00000010'));
   });
 
-  testWidgets('hex 视图显示选中块的类型、偏移与大小', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('hex 视图显示选中块的类型、偏移与大小', (WidgetTester tester) async {
     final path = tempFile('a.bin', List<int>.filled(64, 0x41));
 
     await tester.pumpWidget(
-      appOf(
-        HexView(node: testNode('mdat', 16, 32), filePath: path),
-      ),
+      appOf(HexView(node: testNode('mdat', 16, 32), filePath: path)),
     );
     await tester.pumpAndSettle();
 
@@ -63,9 +60,7 @@ void main() {
     expect(find.text('大小 32'), findsOneWidget);
   });
 
-  testWidgets('hex 视图显示十六进制内容与 ASCII 侧栏', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('hex 视图显示十六进制内容与 ASCII 侧栏', (WidgetTester tester) async {
     final path = tempFile('b.bin', <int>[0x66, 0x74, 0x79, 0x70]);
 
     await tester.pumpWidget(

@@ -19,8 +19,9 @@ ContainerNode testNode(
   children: children,
 );
 
-Widget appOf(Widget child) =>
-    MaterialApp(home: Scaffold(body: SizedBox(width: 900, child: child)));
+Widget appOf(Widget child) => MaterialApp(
+  home: Scaffold(body: SizedBox(width: 900, child: child)),
+);
 
 String tempFile(String name, List<int> bytes) {
   final dir = Directory.systemTemp.createTempSync('media_info_pane');
@@ -38,9 +39,12 @@ void main() {
       appOf(
         StructurePane(
           filePath: path,
-          root: testNode('MP4', 0, 64, children: <ContainerNode>[
-            testNode('mdat', 16, 48),
-          ]),
+          root: testNode(
+            'MP4',
+            0,
+            64,
+            children: <ContainerNode>[testNode('mdat', 16, 48)],
+          ),
         ),
       ),
     );
@@ -57,9 +61,12 @@ void main() {
       appOf(
         StructurePane(
           filePath: path,
-          root: testNode('MP4', 0, 64, children: <ContainerNode>[
-            testNode('mdat', 16, 48),
-          ]),
+          root: testNode(
+            'MP4',
+            0,
+            64,
+            children: <ContainerNode>[testNode('mdat', 16, 48)],
+          ),
         ),
       ),
     );
@@ -74,16 +81,22 @@ void main() {
 
   testWidgets('切换标签时重置展开状态', (WidgetTester tester) async {
     final path = tempFile('c.bin', List<int>.filled(64, 0x41));
-    final root = testNode('MP4', 0, 64, children: <ContainerNode>[
-      testNode('moov', 16, 48, children: <ContainerNode>[
-        testNode('trak', 24, 40),
-      ]),
-    ]);
+    final root = testNode(
+      'MP4',
+      0,
+      64,
+      children: <ContainerNode>[
+        testNode(
+          'moov',
+          16,
+          48,
+          children: <ContainerNode>[testNode('trak', 24, 40)],
+        ),
+      ],
+    );
 
     await tester.pumpWidget(
-      appOf(
-        StructurePane(filePath: path, root: root, resetToken: 0),
-      ),
+      appOf(StructurePane(filePath: path, root: root, resetToken: 0)),
     );
     await tester.pumpAndSettle();
 
@@ -93,9 +106,7 @@ void main() {
 
     // 切到别的标签页：展开状态重置。
     await tester.pumpWidget(
-      appOf(
-        StructurePane(filePath: path, root: root, resetToken: 1),
-      ),
+      appOf(StructurePane(filePath: path, root: root, resetToken: 1)),
     );
     await tester.pumpAndSettle();
 
