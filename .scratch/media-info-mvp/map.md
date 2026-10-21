@@ -53,6 +53,7 @@
 - [标签 / 元数据与语义字段的边界](issues/09-tag-vs-field-boundary.md): 标签**单独成区**（左栏第三区段），与技术属性、容器技术属性三者划清；`GLOSSARY.md` 增补「标签」词条。
 - [CI 双平台构建](issues/10-ci-dual-platform.md): GitHub Actions 矩阵 `windows-latest` + `macos-latest`，Flutter 钉死 3.41.6；产物 Windows zip / macOS tar.gz；CI 上不设中国镜像环境变量；macOS 只保证构建成功。
 - [分发形态与签名](issues/11-distribution-form.md): **双端都发 zip**——Windows 免安装 zip，macOS `.app` 打 tar.gz；不签名/公证、不做安装包、不做自动更新。
+- [视觉语言：暗色仪器面板](docs/design/visual-language.md)（实现期决定，不是一张决策票）：底色偏蓝石墨灰、数据一律等宽、区段眉标是丝印小字、1px 发丝线；配色只有四个且**颜色是编码**——琥珀=媒体载荷、青=结构与坐标、紫=推算值、玫红=出问题。签名元素是**胶片条**：顶层块按真实位置与比例排开的一条文件地图，与结构树选中双向联动。
 - [以 MediaTrace 作为结构树的离线校验基准](issues/12-mediatrace-offline-oracle.md): **不采纳**（CI 成本高、映射层是主要工作量、只单向可用）。替代：每个格式维护**块覆盖率清单**（人写规范，不继承别人的盲区）。
 
 ## Not yet specified

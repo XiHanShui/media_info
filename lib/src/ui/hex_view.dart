@@ -14,6 +14,7 @@ import '../core/byte_source.dart';
 import '../core/errors.dart';
 import '../core/node.dart';
 import '../app/theme.dart';
+import 'structure_tree.dart';
 
 /// 默认最多显示的字节数（大块不能一次读几 GB）。
 const int kDefaultHexByteLimit = 4096;
@@ -164,7 +165,9 @@ class _HexViewState extends State<HexView> {
         });
         return;
       }
-      final wanted = node.size < widget.byteLimit ? node.size : widget.byteLimit;
+      final wanted = node.size < widget.byteLimit
+          ? node.size
+          : widget.byteLimit;
       final count = available < wanted ? available : wanted;
       final bytes = source.read(node.offset, count);
       setState(() {
@@ -211,10 +214,9 @@ class _HexViewState extends State<HexView> {
       return const SizedBox.shrink();
     }
     final lines = hexDumpLines(_bytes, baseOffset: _baseOffset);
-    final mono = MediaType.coordinate(MediaColors.chalk).copyWith(
-      fontSize: 12,
-      height: 1.35,
-    );
+    final mono = MediaType.coordinate(
+      MediaColors.chalk,
+    ).copyWith(fontSize: 12, height: 1.35);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -225,10 +227,7 @@ class _HexViewState extends State<HexView> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 0),
-              child: Text(
-                _error!,
-                style: MediaType.note(MediaColors.rose),
-              ),
+              child: Text(_error!, style: MediaType.note(MediaColors.rose)),
             ),
           if (_fileTruncated && _error == null)
             Padding(
@@ -283,11 +282,20 @@ class _HexViewState extends State<HexView> {
         children: <Widget>[
           Text('hex', style: MediaType.eyebrow(MediaColors.chalkFaint)),
           const SizedBox(width: 14),
-          Text(node.type, style: MediaType.blockName(MediaColors.amber)),
+          Text(
+            structureNodeLabel(node.type),
+            style: MediaType.blockName(MediaColors.amber),
+          ),
           const SizedBox(width: 14),
-          Text('偏移 ${node.offset}', style: MediaType.note(MediaColors.chalkFaint)),
+          Text(
+            '偏移 ${node.offset}',
+            style: MediaType.note(MediaColors.chalkFaint),
+          ),
           const SizedBox(width: 14),
-          Text('大小 ${node.size}', style: MediaType.note(MediaColors.chalkFaint)),
+          Text(
+            '大小 ${node.size}',
+            style: MediaType.note(MediaColors.chalkFaint),
+          ),
           const Spacer(),
           IconButton(
             onPressed: _toggleCollapsed,

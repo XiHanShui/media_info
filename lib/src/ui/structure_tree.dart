@@ -242,7 +242,11 @@ class _StructureTreeState extends State<StructureTree> {
       if (!_expanded.contains(key)) return;
       final children = effective.children;
       for (var index = 0; index < children.length; index++) {
-        visit(children[index], key.isEmpty ? '$index' : '$key.$index', depth + 1);
+        visit(
+          children[index],
+          key.isEmpty ? '$index' : '$key.$index',
+          depth + 1,
+        );
       }
     }
 
@@ -389,21 +393,22 @@ class _TreeRowWidget extends StatelessWidget {
         'monospace',
       ],
     );
-    final typeStyle = (selected
-            ? theme.textTheme.bodySmall?.copyWith(
-                fontFamilyFallback: const <String>[
-                  'Consolas',
-                  'Menlo',
-                  'Courier New',
-                  'monospace',
-                ],
-                fontWeight: FontWeight.w600,
-              )
-            : mono)
-        ?.copyWith(
-          color: MediaColors.chalk,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-        );
+    final typeStyle =
+        (selected
+                ? theme.textTheme.bodySmall?.copyWith(
+                    fontFamilyFallback: const <String>[
+                      'Consolas',
+                      'Menlo',
+                      'Courier New',
+                      'monospace',
+                    ],
+                    fontWeight: FontWeight.w600,
+                  )
+                : mono)
+            ?.copyWith(
+              color: MediaColors.chalk,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            );
 
     return InkWell(
       key: ValueKey<String>('structure-row-${_rowKey(row.key)}'),
@@ -422,11 +427,7 @@ class _TreeRowWidget extends StatelessWidget {
         child: Row(
           children: <Widget>[
             SizedBox(width: row.depth * 14.0),
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: _toggleButton(context),
-            ),
+            SizedBox(width: 18, height: 18, child: _toggleButton(context)),
             Expanded(
               child: Text(
                 structureNodeLabel(row.node.type),
@@ -500,11 +501,7 @@ class _TreeRowWidget extends StatelessWidget {
     return IconButton(
       key: ValueKey<String>('structure-toggle-${_rowKey(row.key)}'),
       onPressed: onToggle,
-      icon: Icon(
-        Icons.add,
-        size: 14,
-        color: MediaColors.chalkFaint,
-      ),
+      icon: Icon(Icons.add, size: 14, color: MediaColors.chalkFaint),
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
       constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
