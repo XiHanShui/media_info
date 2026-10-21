@@ -36,6 +36,7 @@ class SemanticField {
     this.scope = FieldScope.file,
     this.trackIndex, // scope == FieldScope.track 时有效
     this.source, // 来自哪个块的哪个字段，如 'fmt ' / 'STREAMINFO'
+    this.byteRange, // 这个值覆盖的字节范围（读出来的字段才有）
   });
 
   /// 英文技术名，代码标识符，与格式规范逐字对照。
@@ -62,8 +63,49 @@ class SemanticField {
   /// 来自哪个块的哪个字段，如 'fmt ' / 'STREAMINFO'。
   final String? source;
 
+  /// 这个值在文件里覆盖的**字节范围**。
+  ///
+  /// 只有从字节流里直接读出来的字段才有——手写提取器算出来的值
+  /// （比如由多个字节推导出的时长）没有唯一的字节范围，就不标。
+  ///
+  /// 有了它就能把 hex 视图与字段值对应起来：选中一个字段，
+  /// 就能看出它是从哪几个字节来的。
+  final ByteRange? byteRange;
+
   @override
   String toString() => 'SemanticField($key: $value)';
+}
+
+/// 文件里的一段字节范围。
+class ByteRange {
+  const ByteRange(this.start, this.end);
+
+  /// 起始偏移（含）。
+  final int start;
+
+  /// 结束偏移（不含）。
+  final int end;
+
+  /// 长度（字节）。
+  int get length => end - start;
+
+  /// 这个范围是否包含 [offset]。
+  bool contains(int offset) => offset >= start && offset < end;
+
+  @override
+  String toString() => 'ByteRange($start, $end)';
+}
+
+/// 节点里某个字段的字节范围。
+///
+/// 提取器读出值之后，用它把"这个值是从哪几个字节来的"一起挂到语义字段上。
+/// 字段名对不上、或节点本身没有，就返回 `null`——不猜。
+ByteRange? byteRangeOf(ContainerNode? node, String fieldName) {
+  if (node == null) return null;
+  for (final field in node.fields) {
+    if (field.key == fieldName) return field.byteRange;
+  }
+  return null;
 }
 
 /// 结构树节点 = 容器里的一个块。

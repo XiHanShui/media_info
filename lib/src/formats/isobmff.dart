@@ -790,7 +790,15 @@ List<SemanticField> extractIsoBmffFields(ContainerNode root) {
   final ftyp = _childOf(root, 'ftyp');
   final brand = _stringFieldOf(ftyp, 'major_brand');
   if (brand != null) {
-    fields.add(_fileField('brand', '主品牌', brand, source: 'ftyp'));
+    fields.add(
+      _fileField(
+        'brand',
+        '主品牌',
+        brand,
+        source: 'ftyp',
+        byteRange: byteRangeOf(ftyp, 'major_brand'),
+      ),
+    );
   }
   final compatible = _bytesFieldOf(ftyp, 'compatible_brands');
   if (compatible != null) {
@@ -800,6 +808,7 @@ List<SemanticField> extractIsoBmffFields(ContainerNode root) {
         '兼容品牌',
         _fourccList(compatible),
         source: 'ftyp',
+        byteRange: byteRangeOf(ftyp, 'compatible_brands'),
       ),
     );
   }
@@ -811,7 +820,14 @@ List<SemanticField> extractIsoBmffFields(ContainerNode root) {
       _versionOf(mvhd) == 0) {
     fileDuration = movieDuration / movieTimescale;
     fields.add(
-      _fileField('duration', '时长', fileDuration, unit: 's', source: 'mvhd'),
+      _fileField(
+        'duration',
+        '时长',
+        fileDuration,
+        unit: 's',
+        source: 'mvhd',
+        byteRange: byteRangeOf(mvhd, 'duration'),
+      ),
     );
     fields.add(
       _fileField(
@@ -878,6 +894,7 @@ List<SemanticField> _trackFields(
         trackType,
         index: index,
         source: 'hdlr',
+        byteRange: byteRangeOf(hdlr, 'handler_type'),
       ),
     );
   }
@@ -889,11 +906,21 @@ List<SemanticField> _trackFields(
         handlerType,
         index: index,
         source: 'hdlr',
+        byteRange: byteRangeOf(hdlr, 'handler_type'),
       ),
     );
   }
   if (codec != null) {
-    out.add(_trackField('codec', '编码标识', codec, index: index, source: 'stsd'));
+    out.add(
+      _trackField(
+        'codec',
+        '编码标识',
+        codec,
+        index: index,
+        source: 'stsd',
+        byteRange: byteRangeOf(stsd, 'sample_entry_type'),
+      ),
+    );
   }
 
   // 分辨率：优先用 `tkhd` 的显示尺寸（16.16 定点），退回 sample entry 的存尺寸。
@@ -910,6 +937,8 @@ List<SemanticField> _trackFields(
         unit: 'px',
         index: index,
         source: 'tkhd',
+        byteRange:
+            byteRangeOf(tkhd, 'width') ?? byteRangeOf(stsd, 'width'),
       ),
     );
   }
@@ -922,6 +951,8 @@ List<SemanticField> _trackFields(
         unit: 'px',
         index: index,
         source: 'tkhd',
+        byteRange:
+            byteRangeOf(tkhd, 'height') ?? byteRangeOf(stsd, 'height'),
       ),
     );
   }
@@ -937,13 +968,21 @@ List<SemanticField> _trackFields(
         unit: 'Hz',
         index: index,
         source: 'stsd',
+        byteRange: byteRangeOf(stsd, 'samplerate'),
       ),
     );
   }
   final channels = _intFieldOf(stsd, 'channelcount');
   if (channels != null && channels > 0) {
     out.add(
-      _trackField('channels', '声道数', channels, index: index, source: 'stsd'),
+      _trackField(
+        'channels',
+        '声道数',
+        channels,
+        index: index,
+        source: 'stsd',
+        byteRange: byteRangeOf(stsd, 'channelcount'),
+      ),
     );
   }
   final bitDepth = _intFieldOf(stsd, 'samplesize');
@@ -956,6 +995,7 @@ List<SemanticField> _trackFields(
         unit: 'bit',
         index: index,
         source: 'stsd',
+        byteRange: byteRangeOf(stsd, 'samplesize'),
       ),
     );
   }
@@ -1338,6 +1378,7 @@ SemanticField _fileField(
   String? unit,
   FieldOrigin origin = FieldOrigin.read,
   String? source,
+  ByteRange? byteRange,
 }) {
   return SemanticField(
     key: key,
@@ -1347,6 +1388,7 @@ SemanticField _fileField(
     origin: origin,
     scope: FieldScope.file,
     source: source,
+    byteRange: byteRange,
   );
 }
 
@@ -1359,6 +1401,7 @@ SemanticField _trackField(
   FieldOrigin origin = FieldOrigin.read,
   required int index,
   String? source,
+  ByteRange? byteRange,
 }) {
   return SemanticField(
     key: key,
@@ -1369,6 +1412,7 @@ SemanticField _trackField(
     scope: FieldScope.track,
     trackIndex: index,
     source: source,
+    byteRange: byteRange,
   );
 }
 

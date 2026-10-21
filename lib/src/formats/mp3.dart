@@ -331,6 +331,8 @@ ParseResult parseMp3(ByteSource source, {int depth = 1}) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: kMp3FrameType,
+        // 帧头的第 2 个字节里装着版本（bit 3-4）与层（bit 5-6）。
+        byteRange: ByteRange(first.header.offset + 1, first.header.offset + 2),
       ),
       SemanticField(
         key: 'sample_rate',
@@ -340,6 +342,8 @@ ParseResult parseMp3(ByteSource source, {int depth = 1}) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: kMp3FrameType,
+        // 帧头的第 3 个字节：比特率索引（bit 4-7）与采样率索引（bit 2-3）。
+        byteRange: ByteRange(first.header.offset + 2, first.header.offset + 3),
       ),
       SemanticField(
         key: 'channels',
@@ -348,6 +352,8 @@ ParseResult parseMp3(ByteSource source, {int depth = 1}) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: kMp3FrameType,
+        // 帧头的第 4 个字节：声道模式（bit 6-7）。
+        byteRange: ByteRange(first.header.offset + 3, first.header.offset + 4),
       ),
     ]);
   }

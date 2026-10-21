@@ -115,8 +115,9 @@ PositionIndex? buildMatroskaPositionIndex(
   var end = start;
   for (final cluster in clusters) {
     if (cluster.offset < start) start = cluster.offset;
-    if (cluster.offset + cluster.size > end)
+    if (cluster.offset + cluster.size > end) {
       end = cluster.offset + cluster.size;
+    }
   }
   if (end <= start) return null;
   return PositionIndex(duration: duration, payload: ByteRange(start, end));
@@ -344,6 +345,7 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
       Object? value, {
       String? unit,
       String? source,
+      ByteRange? byteRange,
     }) {
       if (value == null) return;
       fields.add(
@@ -355,6 +357,7 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
           scope: FieldScope.track,
           trackIndex: index,
           source: source,
+          byteRange: byteRange,
         ),
       );
     }
@@ -368,17 +371,30 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
         '轨道类型',
         _trackTypeName(trackType),
         source: 'TrackEntry/TrackType',
+        byteRange: _elementByteRange(entry, '0x83'),
       );
     }
 
     final codec = _stringOf(entry, '0x86');
     if (codec != null) {
-      add('codec', '编码标识', codec, source: 'TrackEntry/CodecID');
+      add(
+        'codec',
+        '编码标识',
+        codec,
+        source: 'TrackEntry/CodecID',
+        byteRange: _elementByteRange(entry, '0x86'),
+      );
     }
 
     final language = _stringOf(entry, '0x22B59C');
     if (language != null) {
-      add('language', '语言', language, source: 'TrackEntry/Language');
+      add(
+        'language',
+        '语言',
+        language,
+        source: 'TrackEntry/Language',
+        byteRange: _elementByteRange(entry, '0x22B59C'),
+      );
     }
 
     final video = _childOf(entry, kVideoId);
@@ -388,6 +404,7 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
       _intOf(video, '0xB0'),
       unit: 'px',
       source: 'Video/PixelWidth',
+      byteRange: _elementByteRange(video, '0xB0'),
     );
     add(
       'height',
@@ -395,6 +412,7 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
       _intOf(video, '0xBA'),
       unit: 'px',
       source: 'Video/PixelHeight',
+      byteRange: _elementByteRange(video, '0xBA'),
     );
     final frameRate = _floatOf(video, '0x2383E3');
     if (frameRate != null) {
@@ -404,6 +422,7 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
         frameRate,
         unit: 'fps',
         source: 'Video/FrameRate',
+        byteRange: _elementByteRange(video, '0x2383E3'),
       );
     } else {
       // Matroska 的 FrameRate（0x2383E3）几乎没人写；常见的是
@@ -416,6 +435,7 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
           1000000000 / defaultDuration,
           unit: 'fps',
           source: 'TrackEntry/DefaultDuration',
+          byteRange: _elementByteRange(entry, kDefaultDurationId),
         );
       }
     }
@@ -429,9 +449,16 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
         samplingFrequency.round(),
         unit: 'Hz',
         source: 'Audio/SamplingFrequency',
+        byteRange: _elementByteRange(audio, '0xB5'),
       );
     }
-    add('channels', '声道数', _intOf(audio, '0x9F'), source: 'Audio/Channels');
+    add(
+      'channels',
+      '声道数',
+      _intOf(audio, '0x9F'),
+      source: 'Audio/Channels',
+      byteRange: _elementByteRange(audio, '0x9F'),
+    );
     add(
       'bit_depth',
       '位深',
@@ -501,6 +528,20 @@ String? _stringOf(ContainerNode? node, String id) {
 }
 
 /// 取子元素的解码值。
+/// 某个 EBML 子元素（按元素 ID 找）的字节范围。
+///
+/// Matroska 的叶子元素是**独立的子节点**（不是父节点的字段），
+/// 节点里的字段键是元素名（如 'PixelWidth'），不是十六进制 ID。
+ByteRange? _elementByteRange(ContainerNode? parent, String id) {
+  final child = _childOf(parent, id);
+  if (child == null) return null;
+  for (final field in child.fields) {
+    final range = field.byteRange;
+    if (range != null) return range;
+  }
+  return null;
+}
+
 Object? _valueOf(ContainerNode? node, String id) {
   final child = _childOf(node, id);
   if (child == null) return null;

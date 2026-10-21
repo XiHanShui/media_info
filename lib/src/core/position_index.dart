@@ -17,23 +17,6 @@ library;
 
 import 'node.dart';
 
-/// 文件里的一段字节范围。
-class ByteRange {
-  const ByteRange(this.start, this.end);
-
-  /// 起始偏移（含）。
-  final int start;
-
-  /// 结束偏移（不含）。
-  final int end;
-
-  /// 长度（字节）。
-  int get length => end - start;
-
-  @override
-  String toString() => 'ByteRange($start, $end)';
-}
-
 /// 字节位置 ↔ 播放时间的映射。
 class PositionIndex {
   const PositionIndex({

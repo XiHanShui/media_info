@@ -461,6 +461,9 @@ class _Cursor {
   /// 剩余字节数（字节对齐位置起算）。
   int get remainingBytes => _end - _pos;
 
+  /// 当前读指针的**绝对**偏移（文件里的字节位置）。
+  int get position => _pos;
+
   void _align() {
     if (_bitPos % 8 != 0) {
       _bitPos = (_bitPos + 7) & ~7;
@@ -532,11 +535,15 @@ class _FieldReader {
 
   SemanticField readField(FieldSpec spec) {
     late final Object? value;
+    // 读之前记下位置：字段是顺序从字节流里读的，读完之后的偏移差
+    // 就是这个字段占的字节数——于是每个字段都能标出"它来自哪几个字节"。
+    final start = cursor.position;
     try {
       value = _readValue(spec);
     } on _FieldOverrun catch (e) {
       throw _FieldOverrun(e.offset, spec.name);
     }
+    final end = cursor.position;
     values[spec.name] = value;
     return SemanticField(
       key: spec.name,
@@ -545,6 +552,7 @@ class _FieldReader {
       origin: FieldOrigin.read,
       scope: FieldScope.file,
       source: chunkType,
+      byteRange: end > start ? ByteRange(start, end) : null,
     );
   }
 

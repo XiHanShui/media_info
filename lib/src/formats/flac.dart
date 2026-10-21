@@ -293,6 +293,7 @@ List<SemanticField> extractFlacFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'FLAC STREAMINFO',
+        byteRange: byteRangeOf(streamInfo, 'sample_rate'),
       ),
     );
   }
@@ -306,6 +307,8 @@ List<SemanticField> extractFlacFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'FLAC STREAMINFO',
+        // 位深是 "bits_per_sample_minus_one + 1"——指向它真正读的那几个字节。
+        byteRange: byteRangeOf(streamInfo, 'bits_per_sample'),
       ),
     );
   }
@@ -318,6 +321,8 @@ List<SemanticField> extractFlacFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'FLAC STREAMINFO',
+        // 声道数同样是 "channels_minus_one + 1"。
+        byteRange: byteRangeOf(streamInfo, 'channels'),
       ),
     );
   }
@@ -408,15 +413,24 @@ _DecodedFields _decodeBlockFields(
   final node = result.root.children.isEmpty ? null : result.root.children.first;
   final raw = node?.fields ?? const <SemanticField>[];
   return _DecodedFields(
-    _localize(raw, node?.type ?? child.type),
+    // 窗口内的偏移要还原成文件里的绝对偏移，否则字段的字节范围指错了地方。
+    _localize(raw, node?.type ?? child.type, baseOffset: offset),
     result.truncated || (node?.isOpaque ?? false),
   );
 }
 
 /// 把引擎解出的原始字段转成节点上挂的语义字段：规范里的真实值 + 中文显示名。
-List<SemanticField> _localize(List<SemanticField> raw, String blockType) {
+List<SemanticField> _localize(
+  List<SemanticField> raw,
+  String blockType, {
+  int baseOffset = 0,
+}) {
   final out = <SemanticField>[];
   for (final field in raw) {
+    final range = field.byteRange;
+    final byteRange = range == null
+        ? null
+        : ByteRange(range.start + baseOffset, range.end + baseOffset);
     final name = _minusOneNames[field.key] ?? field.key;
     final value = _minusOneNames.containsKey(field.key)
         ? (field.value as int) + 1
@@ -429,6 +443,7 @@ List<SemanticField> _localize(List<SemanticField> raw, String blockType) {
         unit: _fieldUnits[name],
         origin: FieldOrigin.read,
         source: blockType,
+        byteRange: byteRange,
       ),
     );
   }

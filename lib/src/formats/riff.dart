@@ -526,6 +526,7 @@ List<SemanticField> extractWavFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'fmt ',
+        byteRange: byteRangeOf(fmt, 'sample_rate'),
       ),
     );
   }
@@ -541,6 +542,7 @@ List<SemanticField> extractWavFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'fmt ',
+        byteRange: byteRangeOf(fmt, 'bit_depth'),
       ),
     );
   }
@@ -555,6 +557,7 @@ List<SemanticField> extractWavFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'fmt ',
+        byteRange: byteRangeOf(fmt, 'channels'),
       ),
     );
   }
@@ -569,6 +572,7 @@ List<SemanticField> extractWavFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'fmt ',
+        byteRange: byteRangeOf(fmt, 'wFormatTag'),
       ),
     );
   }
@@ -626,6 +630,7 @@ List<SemanticField> extractAiffFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'COMM',
+        byteRange: byteRangeOf(comm, 'sample_rate'),
       ),
     );
   }
@@ -641,6 +646,7 @@ List<SemanticField> extractAiffFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'COMM',
+        byteRange: byteRangeOf(comm, 'sample_size'),
       ),
     );
   }
@@ -655,6 +661,7 @@ List<SemanticField> extractAiffFields(ContainerNode root) {
         scope: FieldScope.track,
         trackIndex: 0,
         source: 'COMM',
+        byteRange: byteRangeOf(comm, 'num_channels'),
       ),
     );
   }
