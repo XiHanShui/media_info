@@ -94,7 +94,7 @@ void main() {
         'sample_rate': 44100,
         'bit_depth': 16,
         'channels': 2,
-        'codec': 1,
+        'codec': 'PCM',
         'duration': 0.25,
         'overall_bitrate': 1413696,
       });
@@ -161,7 +161,7 @@ void main() {
       expect(fields['sample_rate'], 48000);
       expect(fields['bit_depth'], 24);
       expect(fields['channels'], 2);
-      expect(fields['codec'], 65534);
+      expect(fields['codec'], 'EXTENSIBLE');
     });
 
     test('截断样本：降级并给出中文错误说明，已解析的部分照常返回', () {
