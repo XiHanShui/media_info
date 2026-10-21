@@ -28,6 +28,7 @@ class StructurePane extends StatefulWidget {
     this.fileSize,
     this.loader,
     this.resetToken = 0,
+    this.onNodeSelected,
   });
 
   /// 文件路径（惰性展开重新解析、hex 读字节都用它）。
@@ -44,6 +45,9 @@ class StructurePane extends StatefulWidget {
 
   /// 变化时重置展开状态与选中状态（切换标签页时用）。
   final int resetToken;
+
+  /// 选中块时通知外部（应用层用它把胶片条的高亮与树保持同步）。
+  final ValueChanged<ContainerNode>? onNodeSelected;
 
   @override
   State<StructurePane> createState() => _StructurePaneState();
@@ -76,6 +80,7 @@ class _StructurePaneState extends State<StructurePane> {
 
   void _onNodeSelected(ContainerNode node) {
     setState(() => _selected = node);
+    widget.onNodeSelected?.call(node);
   }
 
   @override

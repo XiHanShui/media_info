@@ -1,6 +1,6 @@
 # 应用骨架：窗口 + 标签页 + 打开文件 + 语义字段视图
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 13
 
 ## Question / 任务
@@ -35,5 +35,28 @@ Blocked by: 13
 - 界面文案**中文**；字段名、块类型名、codec 标识**保持英文**。
 - 尽量不新增 pub 依赖；确需新增时先说明理由。
 - `flutter analyze` 无 issue；`flutter test` 通过。
+
+## Answer
+
+已实现并合并进 `integration/media-info-mvp`。**287 个测试全绿**（新增 32 个，删掉脚手架的计数器冒烟测试），并且**应用真跑起来截图验证过**。
+
+**新增依赖**：`file_selector: ^1.1.0`（flutter.dev 官方包，薄平台通道封装）。理由：Flutter 桌面**没有内置**文件选择器，而拖放路线无法被无头驱动。原生 registrant 是自动生成的，没有手改 `windows/flutter/generated_*`。
+
+**公开 API**：
+
+- `lib/src/formats/all_formats.dart`：`void registerAllFormats()`——调用五个 `register*` 函数。**注册顺序 = 嗅探顺序**（容器在前，MP3 的宽松匹配在后）。幂等，无 import 副作用。
+- `lib/src/app/parse_service.dart`：`ParsedDocument`、`parseFile` / `parseFileInIsolate`（Isolate.run）、`parseStructureAtDepth`（票 21 的惰性展开入口）、`readOpenFilesFromEnvironment`。
+- `lib/src/app/extension_check.dart`：`String? checkExtension(String path, String? detectedFormat)`——返回「扩展名 `.wav` 与实际格式 `MP4` 不符」；扩展名缺失/未知、或格式识别不出来时返回 `null`。
+- `lib/src/app/semantic_view.dart`：`SemanticView`、`formatFieldValue`、`kDerivedSuffix = '（推算）'`。
+- `lib/src/app/document_tab.dart`：`DocumentStatus`（loading/ready/failed）、`DocumentTab`、`DocumentTabBody`、`DocumentTabMessage`。
+- `lib/src/app/app.dart`：`MediaInfoApp`、`AppShell`、`ExportJsonHandler` typedef、**`StructurePanePlaceholder`**（票 21 的槽位）。
+
+**推算值的视觉区分**：中文标签用 `onSurfaceVariant` + *斜体*，标签后面另起一个 `tertiary` 色的「（推算）」chip；英文技术名显示在中文标签下方（`labelSmall` + 等宽字体），这样 widget 测试里 `find.text('采样率')` 和 `find.text('（推算）')` 都能命中。
+
+**文件级字段的补齐**：按 UI 契约的规则——先**移除**提取器带来的同名 `file_name`/`file_size`/`container_format`（否则 Matroska 的 `file_size` 会重复出现），再统一塞入这三个。`container_format` 的值取自提取器已算好的结果（Matroska 的 DocType / MP4 的 `brand`），核心保持唯一真相源。
+
+**票 21 的槽位**：`app.dart` 的 `AppShell._buildTabContent` 是装配点，右侧是 `DocumentTabBody(state: state, rightPane: const StructurePanePlaceholder())`。右栏行是 `Row[ Expanded(flex 1) = SemanticView, VerticalDivider, Expanded(flex 2) = rightPane ]`。
+
+**给票 24 的提醒**：测试用 `MediaInfoApp(initialPaths: [...])` 驱动（与 `MEDIA_INFO_OPEN_FILES` 同效，但进程内可设）。解析在 isolate 里跑，所以 widget 测试必须先 `await tester.runAsync(...)` 再 `pumpAndSettle`。
 
 **注意**：本票与实现票 21（结构树 + hex）会同时改 UI 目录。为避免冲突，本票只创建 `lib/src/app/` 下的骨架与左栏相关文件，**不创建结构树与 hex 相关的文件**。

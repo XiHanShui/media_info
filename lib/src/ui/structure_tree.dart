@@ -13,6 +13,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../core/node.dart';
+import '../app/theme.dart';
 import '../formats/matroska.dart';
 
 /// 惰性展开用的加载器：按更大深度重新解析整个文件的结构树。
@@ -53,14 +54,6 @@ final RegExp _hexElementId = RegExp(r'^0x[0-9A-Fa-f]+$');
 /// 用**路径**而不是偏移做 key——偏移可能重复（根节点和第一个子块都在 0），
 /// 重复的 key 会让 Flutter 的元素树错位。
 String _rowKey(String path) => path.isEmpty ? 'root' : path;
-
-/// 等宽字体的跨平台回退列表。
-const List<String> kMonoFontFallback = <String>[
-  'Consolas',
-  'Menlo',
-  'Courier New',
-  'monospace',
-];
 
 /// 结构树视图。
 class StructureTree extends StatefulWidget {
@@ -118,6 +111,12 @@ class _StructureTreeState extends State<StructureTree> {
 
   /// 当前解析深度。
   int _depth = kDefaultStructureDepth;
+
+  @override
+  void initState() {
+    super.initState();
+    _depth = kDefaultStructureDepth;
+  }
 
   @override
   void didUpdateWidget(StructureTree oldWidget) {
@@ -272,7 +271,7 @@ class _StructureTreeState extends State<StructureTree> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _TreeHeader(),
+        _TreeHeader(fileSize: widget.fileSize),
         Expanded(
           child: ListView.builder(
             itemCount: rows.length,
@@ -325,22 +324,19 @@ class _TreeRow {
 
 /// 表头：列的含义。
 class _TreeHeader extends StatelessWidget {
-  const _TreeHeader();
+  const _TreeHeader({required this.fileSize});
+
+  final int fileSize;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = theme.textTheme.labelSmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
+    final style = MediaType.eyebrow(MediaColors.chalkFaint);
     return Container(
-      height: 22,
+      height: 26,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        border: Border(
-          bottom: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
+      decoration: const BoxDecoration(
+        color: MediaColors.panel,
+        border: Border(bottom: BorderSide(color: MediaColors.edge)),
       ),
       child: Row(
         children: <Widget>[
@@ -390,21 +386,44 @@ class _TreeRowWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mono = theme.textTheme.bodySmall?.copyWith(
-      fontFamilyFallback: kMonoFontFallback,
+      fontFamilyFallback: const <String>[
+        'Consolas',
+        'Menlo',
+        'Courier New',
+        'monospace',
+      ],
     );
-    final typeStyle = mono?.copyWith(
-      fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-      color: selected
-          ? theme.colorScheme.onPrimaryContainer
-          : theme.colorScheme.onSurface,
-    );
+    final typeStyle =
+        (selected
+                ? theme.textTheme.bodySmall?.copyWith(
+                    fontFamilyFallback: const <String>[
+                      'Consolas',
+                      'Menlo',
+                      'Courier New',
+                      'monospace',
+                    ],
+                    fontWeight: FontWeight.w600,
+                  )
+                : mono)
+            ?.copyWith(
+              color: MediaColors.chalk,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            );
 
     return InkWell(
       key: ValueKey<String>('structure-row-${_rowKey(row.key)}'),
       onTap: onSelect,
       child: Container(
-        color: selected ? theme.colorScheme.primaryContainer : null,
+        // 选中态是"发丝边 + 一点底色"，不是一整条琥珀横杠——那太吵。
+        color: selected ? MediaColors.panelHigh : null,
         padding: const EdgeInsets.symmetric(horizontal: 8),
+        foregroundDecoration: selected
+            ? const BoxDecoration(
+                border: Border(
+                  left: BorderSide(color: MediaColors.amber, width: 2),
+                ),
+              )
+            : null,
         child: Row(
           children: <Widget>[
             SizedBox(width: row.depth * 14.0),
@@ -420,10 +439,8 @@ class _TreeRowWidget extends StatelessWidget {
               width: 88,
               child: Text(
                 '${row.node.offset}',
-                style: mono?.copyWith(
-                  color: selected
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.onSurfaceVariant,
+                style: MediaType.coordinate(
+                  selected ? MediaColors.chalkDim : MediaColors.chalkFaint,
                 ),
                 textAlign: TextAlign.right,
               ),
@@ -432,10 +449,8 @@ class _TreeRowWidget extends StatelessWidget {
               width: 88,
               child: Text(
                 '${row.node.size}',
-                style: mono?.copyWith(
-                  color: selected
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.onSurfaceVariant,
+                style: MediaType.coordinate(
+                  selected ? MediaColors.chalkDim : MediaColors.chalkFaint,
                 ),
                 textAlign: TextAlign.right,
               ),
@@ -456,7 +471,6 @@ class _TreeRowWidget extends StatelessWidget {
 
   /// 展开按钮：有子块是箭头，没有子块（但不透明、且没试过）是"还有更多"的意思。
   Widget _toggleButton(BuildContext context) {
-    final theme = Theme.of(context);
     if (busy) {
       return const Center(
         child: SizedBox(
@@ -473,6 +487,7 @@ class _TreeRowWidget extends StatelessWidget {
         icon: Icon(
           expanded ? Icons.expand_more : Icons.chevron_right,
           size: 16,
+          color: MediaColors.chalkFaint,
         ),
         padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
@@ -486,11 +501,7 @@ class _TreeRowWidget extends StatelessWidget {
     return IconButton(
       key: ValueKey<String>('structure-toggle-${_rowKey(row.key)}'),
       onPressed: onToggle,
-      icon: Icon(
-        Icons.add,
-        size: 14,
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
+      icon: Icon(Icons.add, size: 14, color: MediaColors.chalkFaint),
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
       constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
@@ -517,7 +528,7 @@ class _ProportionBar extends StatelessWidget {
     final fraction = fileSize <= 0 ? 0.0 : size / fileSize;
     final clamped = fraction.clamp(0.0, 1.0);
     final style = theme.textTheme.labelSmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
+      color: MediaColors.chalkFaint,
       fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
     );
     return Row(
@@ -548,7 +559,7 @@ class _ProportionBar extends StatelessWidget {
                 height: 6,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.75),
+                    color: MediaColors.amber.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),

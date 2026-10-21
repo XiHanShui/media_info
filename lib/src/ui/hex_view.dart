@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import '../core/byte_source.dart';
 import '../core/errors.dart';
 import '../core/node.dart';
+import '../app/theme.dart';
 import 'structure_tree.dart';
 
 /// 默认最多显示的字节数（大块不能一次读几 GB）。
@@ -213,10 +214,9 @@ class _HexViewState extends State<HexView> {
       return const SizedBox.shrink();
     }
     final lines = hexDumpLines(_bytes, baseOffset: _baseOffset);
-    final mono = theme.textTheme.bodySmall?.copyWith(
-      fontFamilyFallback: kMonoFontFallback,
-      height: 1.25,
-    );
+    final mono = MediaType.coordinate(
+      MediaColors.chalk,
+    ).copyWith(fontSize: 12, height: 1.35);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -227,21 +227,14 @@ class _HexViewState extends State<HexView> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 0),
-              child: Text(
-                _error!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-              ),
+              child: Text(_error!, style: MediaType.note(MediaColors.rose)),
             ),
           if (_fileTruncated && _error == null)
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 0),
               child: Text(
                 '文件在偏移 ${node.offset} 处截断，只读得到 ${_bytes.length} 字节',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
+                style: MediaType.note(MediaColors.rose),
               ),
             ),
           if (_remaining > 0)
@@ -249,14 +242,12 @@ class _HexViewState extends State<HexView> {
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 0),
               child: Text(
                 '仅显示前 ${_bytes.length} 字节，还有 $_remaining 字节未显示',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: MediaType.note(MediaColors.chalkFaint),
               ),
             ),
           Expanded(
             child: Container(
-              color: theme.colorScheme.surfaceContainerLow,
+              color: MediaColors.ink,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
@@ -285,36 +276,25 @@ class _HexViewState extends State<HexView> {
   Widget _header(BuildContext context, ThemeData theme, ContainerNode node) {
     return Container(
       height: 26,
-      color: theme.colorScheme.surfaceContainerHigh,
+      color: MediaColors.panel,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: <Widget>[
-          Text(
-            'hex',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(width: 12),
+          Text('hex', style: MediaType.eyebrow(MediaColors.chalkFaint)),
+          const SizedBox(width: 14),
           Text(
             structureNodeLabel(node.type),
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: MediaType.blockName(MediaColors.amber),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Text(
             '偏移 ${node.offset}',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: MediaType.note(MediaColors.chalkFaint),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Text(
             '大小 ${node.size}',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: MediaType.note(MediaColors.chalkFaint),
           ),
           const Spacer(),
           IconButton(
@@ -322,6 +302,7 @@ class _HexViewState extends State<HexView> {
             icon: Icon(
               _isCollapsed ? Icons.expand_less : Icons.expand_more,
               size: 16,
+              color: MediaColors.chalkFaint,
             ),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
