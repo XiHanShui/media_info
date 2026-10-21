@@ -677,6 +677,7 @@ FormatSpec get wavFormat => FormatSpec(
   container: wavSpec,
   extractor: extractWavFields,
   detect: detectWav,
+  parser: parseWav,
 );
 
 /// AIFF 格式的注册项。
@@ -685,6 +686,7 @@ FormatSpec get aiffFormat => FormatSpec(
   container: aiffSpec,
   extractor: extractAiffFields,
   detect: detectAiff,
+  parser: parseAiff,
 );
 
 /// 把 WAV 注册进全局格式注册表。

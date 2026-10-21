@@ -1,4 +1,5 @@
 import 'byte_source.dart';
+import 'engine.dart';
 import 'errors.dart';
 import 'extractor.dart';
 import 'spec.dart';
@@ -13,6 +14,7 @@ class FormatSpec {
     required this.container, // ContainerSpec
     this.extractor, // 叶子提取器
     this.detect, // 嗅探：从文件头判断是不是这个格式
+    this.parser, // 自定义解析入口（容器结构不规则时用）
   });
 
   /// 格式名。
@@ -26,6 +28,18 @@ class FormatSpec {
 
   /// 嗅探函数：从文件头判断是不是这个格式。
   final bool Function(ByteSource)? detect;
+
+  /// 自定义解析入口。
+  ///
+  /// 默认为 null，即用 [parseContainer] 读 [container] 这张表。但有些格式的
+  /// 结构**装不进通用表**：
+  /// - RIFF / AIFF / LIST：载荷开头有 4 字节 form type，通用引擎按 [HeaderRule.prefixBytes] 处理
+  /// - FLAC：元数据块头是 1 bit + 7 bit + 24 bit 的位域，不是普通的 size 字段
+  /// - MP3：根本没有块树，是连续的帧序列
+  ///
+  /// 这类格式由自己的模块提供解析函数，通过本字段接进来，**调用方无需知道差别**——
+  /// 统一走 [parseFormat]。
+  final ParseResult Function(ByteSource source, {int depth})? parser;
 }
 
 final List<FormatSpec> _registry = <FormatSpec>[];
@@ -66,3 +80,15 @@ FormatSpec? detectFormat(ByteSource source) {
 
 /// 清空注册表（测试用）。
 void clearFormats() => _registry.clear();
+
+/// 解析一个已注册格式的结构树。
+///
+/// 这是**调用方应该用的唯一入口**：格式自己 quirks（RIFF 的 form type、FLAC 的位域块头、
+/// MP3 的帧序列）都封装在 [FormatSpec.parser] 或规格表里，调用方不需要按格式分支。
+///
+/// [depth] 是展开的层数，1 = 只建第一层。
+ParseResult parseFormat(FormatSpec spec, ByteSource source, {int depth = 1}) {
+  final parser = spec.parser;
+  if (parser != null) return parser(source, depth: depth);
+  return parseContainer(spec.container, source, depth: depth);
+}

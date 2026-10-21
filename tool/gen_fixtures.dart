@@ -44,11 +44,11 @@ const normalSamples = <Sample>[
   ]),
   Sample('flac_s16_44100_stereo.normal', [
     '-f', 'lavfi', '-i', 'sine=f=440:d=0.25',
-    '-c:a', 'flac',
+    '-c:a', 'flac', '-ar', '44100', '-ac', '2',
   ]),
   Sample('mp3_cbr128_44100_stereo.normal', [
     '-f', 'lavfi', '-i', 'sine=f=440:d=0.25',
-    '-c:a', 'libmp3lame', '-b:a', '128k',
+    '-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', '-ac', '2',
   ]),
   Sample('mp4_h264_aac_320x240.normal', [
     '-f', 'lavfi', '-i', 'testsrc=size=320x240:rate=25:d=1',
