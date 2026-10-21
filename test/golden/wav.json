@@ -1,0 +1,107 @@
+{
+  "format": "WAV",
+  "fixture": "wav_pcm_s16le_44100_stereo.normal.wav",
+  "generator": "tool/gen_golden.dart",
+  "notes": [
+    "本文件由 `dart run tool/gen_golden.dart` 生成，请勿手工编辑。",
+    "每个节点最多记录 64 个子节点；超出时截断，并在该节点上标 childrenTruncated / childrenTotal。"
+  ],
+  "tree": {
+    "type": "WAV",
+    "offset": 0,
+    "size": 44178,
+    "dataOffset": 0,
+    "dataSize": 44178,
+    "isOpaque": false,
+    "fields": [],
+    "children": [
+      {
+        "type": "RIFF",
+        "offset": 0,
+        "size": 44178,
+        "dataOffset": 8,
+        "dataSize": 44170,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "form_type",
+            "value": "WAVE"
+          }
+        ],
+        "children": [
+          {
+            "type": "fmt ",
+            "offset": 12,
+            "size": 24,
+            "dataOffset": 20,
+            "dataSize": 16,
+            "isOpaque": false,
+            "fields": [
+              {
+                "key": "wFormatTag",
+                "value": 1
+              },
+              {
+                "key": "channels",
+                "value": 2
+              },
+              {
+                "key": "sample_rate",
+                "value": 44100
+              },
+              {
+                "key": "byte_rate",
+                "value": 176400
+              },
+              {
+                "key": "block_align",
+                "value": 4
+              },
+              {
+                "key": "bit_depth",
+                "value": 16
+              }
+            ],
+            "children": []
+          },
+          {
+            "type": "LIST",
+            "offset": 36,
+            "size": 34,
+            "dataOffset": 44,
+            "dataSize": 26,
+            "isOpaque": false,
+            "fields": [
+              {
+                "key": "list_type",
+                "value": "INFO"
+              }
+            ],
+            "children": [
+              {
+                "type": "ISFT",
+                "offset": 48,
+                "size": 21,
+                "dataOffset": 56,
+                "dataSize": 13,
+                "isOpaque": true,
+                "fields": [],
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "data",
+            "offset": 70,
+            "size": 44108,
+            "dataOffset": 78,
+            "dataSize": 44100,
+            "isOpaque": false,
+            "fields": [],
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}
