@@ -96,8 +96,10 @@ try {
             if ($coords.Count -lt 2) { continue }
             $x = [int]$coords[0]
             $y = [int]$coords[1]
-            Write-Step "点击 ($x, $y)"
-            & $clicker -X $x -Y $y -ImageWidth $Width -ImageHeight $Height | Out-Null
+            $right = $coords.Count -ge 3 -and $coords[2] -eq 'right'
+            Write-Step "点击 ($x, $y)$(if ($right) { ' 右键' })"
+            & $clicker -X $x -Y $y -ImageWidth $Width -ImageHeight $Height `
+                -TargetWidth $Width -TargetHeight $Height -Right:$right | Out-Null
             Start-Sleep -Milliseconds $ClickSettleMilliseconds
         }
     }
