@@ -482,6 +482,10 @@ const ChildSpec _paspSpec = ChildSpec(type: 'pasp', opaque: true);
 const ChildSpec _btrtSpec = ChildSpec(type: 'btrt', opaque: true);
 const ChildSpec _waveSpec = ChildSpec(type: 'wave', opaque: true);
 
+/// `dref` 里的数据引用条目（`url ` / `urn `）。
+const ChildSpec _urlSpec = ChildSpec(type: 'url ', opaque: true);
+const ChildSpec _urnSpec = ChildSpec(type: 'urn ', opaque: true);
+
 // --- 不透明叶子 --------------------------------------------------------------
 
 const ChildSpec _mdatSpec = ChildSpec(type: 'mdat', opaque: true);
@@ -628,10 +632,13 @@ const ContainerSpec _stblContainer = ContainerSpec(
   },
 );
 
+/// `dinf`（数据引用）。`dref` 内部的 `url `/`urn ` 块声明在这里——受引擎限制
+/// （`dref` 载荷以 FullBox 头开头，无法跳过前缀继续递归），它们目前不会出现在
+/// 结构树里。
 const ContainerSpec _dinfContainer = ContainerSpec(
   name: 'dinf',
   header: _isoHeader,
-  children: {'dref': _drefSpec},
+  children: {'dref': _drefSpec, 'url ': _urlSpec, 'urn ': _urnSpec},
 );
 
 const ContainerSpec _minfContainer = ContainerSpec(
