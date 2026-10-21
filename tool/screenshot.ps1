@@ -71,6 +71,7 @@ namespace MediaInfoShot
         [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
         [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr hWnd, ref RECT lpPoint);
         [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+        [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
         [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint nFlags);
     }
 }
@@ -135,6 +136,10 @@ if (-not $window -or $window.Handle -eq [IntPtr]::Zero) {
 [void][MediaInfoShot.Native]::ShowWindow($window.Handle, 9)   # SW_RESTORE
 [void][MediaInfoShot.Native]::SetForegroundWindow($window.Handle)
 Start-Sleep -Milliseconds 300
+
+# 把鼠标挪到窗口外——否则上一次点击的位置会留下悬停提示，挡住截图里的内容。
+[void][MediaInfoShot.Native]::SetCursorPos(-50, -50)
+Start-Sleep -Milliseconds 250
 
 # Park the window at a known position/size so the capture is deterministic and
 # does not include desktop chrome (the Flutter default window can open partly
