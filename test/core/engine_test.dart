@@ -613,7 +613,8 @@ void main() {
       expect(fields['mid'], 0x010203);
     });
 
-    test('RIFF 风格：长度不含块头 + 奇数长度补一个对齐字节', () {      final spec = ContainerSpec(
+    test('RIFF 风格：长度不含块头 + 奇数长度补一个对齐字节', () {
+      final spec = ContainerSpec(
         name: 'RIFF',
         header: HeaderRule(
           sizeBytes: 4,
