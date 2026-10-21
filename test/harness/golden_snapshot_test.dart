@@ -6,6 +6,9 @@ import 'package:media_info/src/core/node.dart';
 
 import '../support/golden_tree.dart';
 
+/// 把 CRLF / CR 统一成 LF。
+String _normalizeEol(String text) => text.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
 void main() {
   group('golden 树快照', () {
     test('每个目标格式都有一份快照文件', () {
@@ -19,8 +22,10 @@ void main() {
     for (final target in goldenTargets) {
       test('${target.format}：快照与当前解析结果一致', () {
         final path = goldenPath(target.format);
-        final expected = File(path).readAsStringSync();
-        final actual = buildGoldenText(target);
+        // 归一化换行符：git 在 Windows 上检出时会把 LF 转成 CRLF，
+        // 而生成器始终产出 LF。不归一化的话，Windows 上的检出必然对不上。
+        final expected = _normalizeEol(File(path).readAsStringSync());
+        final actual = _normalizeEol(buildGoldenText(target));
 
         expect(
           actual,
