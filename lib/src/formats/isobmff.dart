@@ -1376,12 +1376,75 @@ SemanticField _trackField(
 // 格式注册
 // ---------------------------------------------------------------------------
 
-/// 嗅探：偏移 4 处是不是 `ftyp`（ISO BMFF 的品牌盒）。
+/// 嗅探：走一遍顶层 box 链，看有没有 ISO base media 的特征盒。
+///
+/// **不能只看偏移 4 是不是 `ftyp`**——真实世界的文件有好几种开头：
+/// - `ftyp` —— 常规 MP4 / MOV（ffmpeg 与多数 muxer 的写法）
+/// - `styp` / `moof` / `sidx` —— 分片 MP4（fMP4）
+/// - `moov` —— 传统 QuickTime 常见开头
+/// - `wide` —— QuickTime 的填充盒
+/// - `mdat` —— 媒体数据在最前面的 MOV
 ///
 /// 只看文件头，不参与扩展名判定——扩展名写成 `.wav` 的 MP4 也认。
 bool _detectIsoBmff(ByteSource source) {
   if (source.length < 8) return false;
-  return String.fromCharCodes(source.read(4, 4)) == 'ftyp';
+
+  // 只认这些顶层盒类型。`ftyp`/`styp`/`sidx`/`moof` 是 ISO base media 独有的；
+  // `moov`/`mdat`/`wide` 是 QuickTime/MP4 常见开头。
+  const signatureBoxes = {
+    'ftyp',
+    'styp',
+    'sidx',
+    'moof',
+    'moov',
+    'mdat',
+    'wide',
+  };
+
+  const maxBoxesToWalk = 8;
+  var offset = 0;
+  for (var i = 0; i < maxBoxesToWalk; i++) {
+    if (offset + 8 > source.length) return false;
+
+    final Uint8List header = source.read(offset, 8);
+    final int size = _readU32(header, 0);
+    final String type = String.fromCharCodes(header.sublist(4, 8));
+
+    if (signatureBoxes.contains(type)) {
+      // 长度字段只做**最低限度的合理性校验**：
+      // - 小于 8 的长度连块头都装不下，荒谬
+      // - 0xFFFFFFFF 在 ISO BMFF 里不是"未知长度"（那是 size==0），在这里等于
+      //   声明一个 4GB 的盒子，与文件大小对不上，多半是误判
+      // 反过来，**声明长度超出文件末尾是允许的**——被截断的 MP4/MOV 非常常见，
+      // 不能因为文件短就否认它是 ISO base media。
+      if (size == 1) {
+        if (offset + 16 > source.length) return false;
+        final int largeSize = _readU64(source.read(offset + 8, 8), 0);
+        if (largeSize < 16) return false;
+      } else if (size != 0 && (size < 8 || size == 0xFFFFFFFF)) {
+        return false;
+      }
+      return true;
+    }
+
+    // 推进到下一个顶层 box。
+    final int next;
+    if (size == 1) {
+      if (offset + 16 > source.length) return false;
+      final int largeSize = _readU64(source.read(offset + 8, 8), 0);
+      if (largeSize < 16) return false;
+      next = offset + largeSize;
+    } else if (size == 0) {
+      // 长度 0 = 这个 box 延伸到文件尾，后面不会再有顶层 box。
+      return false;
+    } else {
+      if (size < 8) return false;
+      next = offset + size;
+    }
+    if (next <= offset || next > source.length) return false;
+    offset = next;
+  }
+  return false;
 }
 
 /// ISO BMFF（MP4 / MOV）的格式规格（供注册表登记）。

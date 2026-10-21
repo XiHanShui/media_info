@@ -1,6 +1,6 @@
 # FLAC：规格表 + 叶子提取器
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 13
 
 ## Question / 任务
@@ -40,3 +40,22 @@ Blocked by: 13
 **扩展名不符也要能正确识别**：测试里把本格式的样本复制成**错误的扩展名**（例如 `mislabelled.wav`）到临时目录，断言 `detectFormat` 仍返回本格式。
 
 **约束**：纯 Dart，无新依赖。`flutter analyze` 无 issue。
+
+## Answer
+
+已实现并合并进 `integration/media-info-mvp`。公开 API：`flacFormat` / `registerFlacFormat()` / `parseFlac` / `extractFlacFields` / `isFlacFile` / `flacContainerSpec`。
+
+**FLAC 没有可用的块树**：元数据块头是 `1 bit last-metadata-block + 7 bit type + 24 bit length` 的位域，通用引擎表达不了（`HeaderRule` 没有标志位，引擎也总是从偏移 0 开始读子块，会把 `fLaC` 魔数当块头）。所以 `parseFlac` **手写**读块头；块载荷仍然走核心引擎的字段读取器（通过 window + "一个子块、无头"的 spec），位序、大小端、长度前缀都没有重复实现。
+
+**STREAMINFO 的位域**用 `FieldType.bits` + `bitWidth`（sample_rate 20 bit / channels 3 bit / bits_per_sample 5 bit / total_samples 36 bit），大端位序，有手打包字节的测试。**注意规范里存的是"值减 1"**，表里字段名是 `channels_minus_one`/`bits_per_sample_minus_one`，节点上暴露的是 `channels`/`bits_per_sample`（已 +1）。
+
+**整合期我改了一处**：给 `flacFormat` 挂了 `parser: parseFlac`。原先 FLAC 模块自己造了一个 `parseFormatContainer` 做 dispatch——**它零调用者（死代码），而且和核心的 `parseFormat` 重复**，已删除。现在所有格式统一走核心入口。
+
+**其它要点**：
+
+- `duration` 标为 **derived**（FLAC 是 total_samples / sample_rate 算出来的），与词表里写的 `read` 有出入——是有意为之。
+- 音频帧**不解析**，在树里没有节点；根节点的 size 覆盖它们。所以"在音频区被截断"的文件不会被标为截断。
+- 未知/保留的块类型（7..126、127）→ `type: 'UNKNOWN'`、`isOpaque: true`，不丢弃。
+- 截断样本正好切在 8192 字节的 PADDING 块里：STREAMINFO/VORBIS_COMMENT 存活，PADDING 的 size 被裁剪。
+
+**验证**：`flutter analyze` 无 issue；全量测试通过；`dart format` 已应用。
