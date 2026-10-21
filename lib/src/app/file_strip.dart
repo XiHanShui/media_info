@@ -15,6 +15,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../core/node.dart';
+import '../ui/structure_tree.dart';
 import 'theme.dart';
 
 /// 胶片条。
@@ -129,7 +130,9 @@ class _Segment extends StatelessWidget {
   Widget build(BuildContext context) {
     final fraction = total <= 0 ? 0.0 : node.size / total;
     final segmentWidth = (width * fraction).clamp(1.0, width);
-    final role = _roleOf(node.type);
+    // 用**规范名**（Matroska 的十六进制 ID 要映射成 Segment/Info/…）
+    final label = structureNodeLabel(node.type);
+    final role = _roleOf(label);
 
     final fill = isSelected
         ? Color.alphaBlend(role.fill.withValues(alpha: 0.85), MediaColors.amber)
@@ -144,7 +147,7 @@ class _Segment extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(right: 1),
         child: Tooltip(
-          message: '${node.type}  ·  偏移 ${node.offset}  ·  长度 ${node.size}',
+          message: '$label  ·  偏移 ${node.offset}  ·  长度 ${node.size}',
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: onTap == null ? null : () => onTap!(node),
@@ -159,7 +162,7 @@ class _Segment extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 5),
                       child: Center(
                         child: Text(
-                          node.type,
+                          label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: MediaType.note(
@@ -187,6 +190,7 @@ class _Segment extends StatelessWidget {
       );
     }
     const Set<String> metadata = <String>{
+      // ISO base media
       'moov',
       'moof',
       'trak',
@@ -198,6 +202,16 @@ class _Segment extends StatelessWidget {
       'ftyp',
       'mfra',
       'sidx',
+      // Matroska / EBML——用**规范名**，不是十六进制 ID
+      'EBML',
+      'Segment',
+      'SeekHead',
+      'Info',
+      'Tracks',
+      'TrackEntry',
+      'Video',
+      'Audio',
+      'Tags',
     };
     if (metadata.contains(type)) {
       return const _StripRole(
