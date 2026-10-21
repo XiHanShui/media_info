@@ -74,7 +74,7 @@ void main() {
       final result = parseMp3(source);
       source.close();
 
-      final fields = {for (final f in extractMp3(result.root)) f.key: f};
+      final fields = {for (final f in extractMp3Fields(result.root)) f.key: f};
 
       expect(fields['codec']?.value, 'MPEG-1 Layer 3');
       expect(fields['codec']?.label, '编码标识');
@@ -117,7 +117,7 @@ void main() {
       expect(last.isOpaque, isTrue);
 
       // 时长只按完整帧算。
-      final fields = {for (final f in extractMp3(result.root)) f.key: f};
+      final fields = {for (final f in extractMp3Fields(result.root)) f.key: f};
       expect(fields['duration']?.value, closeTo(0.182857, 1e-6));
     });
 
@@ -137,7 +137,7 @@ void main() {
         'VBR',
       );
 
-      final fields = {for (final f in extractMp3(result.root)) f.key: f};
+      final fields = {for (final f in extractMp3Fields(result.root)) f.key: f};
       expect(fields['codec']?.value, 'MPEG-2 Layer 3');
       expect(fields['sample_rate']?.value, 22050);
       expect(fields['channels']?.value, 1);

@@ -54,7 +54,7 @@ const ContainerSpec _mp3Container = ContainerSpec(
 FormatSpec get mp3Format => FormatSpec(
   name: 'MP3',
   container: _mp3Container,
-  extractor: extractMp3,
+  extractor: extractMp3Fields,
   detect: detectMp3,
 );
 
@@ -82,7 +82,7 @@ bool detectMp3(ByteSource source) {
 /// 叶子提取器：从已解析的树里取统一词表的语义字段（不重复解析字节）。
 ///
 /// MP3 只有一条音轨，所以轨道级字段挂在根节点上（[FieldScope.track]，[trackIndex] 0）。
-List<SemanticField> extractMp3(ContainerNode root) => root.fields
+List<SemanticField> extractMp3Fields(ContainerNode root) => root.fields
     .where((f) => _unifiedKeys.contains(f.key))
     .toList(growable: false);
 
