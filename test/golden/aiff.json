@@ -1,0 +1,82 @@
+{
+  "format": "AIFF",
+  "fixture": "aiff_pcm_s16be_48000_mono.normal.aiff",
+  "generator": "tool/gen_golden.dart",
+  "notes": [
+    "本文件由 `dart run tool/gen_golden.dart` 生成，请勿手工编辑。",
+    "每个节点最多记录 64 个子节点；超出时截断，并在该节点上标 childrenTruncated / childrenTotal。"
+  ],
+  "tree": {
+    "type": "AIFF",
+    "offset": 0,
+    "size": 24054,
+    "dataOffset": 0,
+    "dataSize": 24054,
+    "isOpaque": false,
+    "fields": [],
+    "children": [
+      {
+        "type": "FORM",
+        "offset": 0,
+        "size": 24054,
+        "dataOffset": 8,
+        "dataSize": 24046,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "form_type",
+            "value": "AIFF"
+          }
+        ],
+        "children": [
+          {
+            "type": "COMM",
+            "offset": 12,
+            "size": 26,
+            "dataOffset": 20,
+            "dataSize": 18,
+            "isOpaque": false,
+            "fields": [
+              {
+                "key": "num_channels",
+                "value": 1
+              },
+              {
+                "key": "num_sample_frames",
+                "value": 12000
+              },
+              {
+                "key": "sample_size",
+                "value": 16
+              },
+              {
+                "key": "sample_rate",
+                "value": "hex:400EBB80000000000000"
+              }
+            ],
+            "children": []
+          },
+          {
+            "type": "SSND",
+            "offset": 38,
+            "size": 24016,
+            "dataOffset": 46,
+            "dataSize": 24008,
+            "isOpaque": false,
+            "fields": [
+              {
+                "key": "offset",
+                "value": 0
+              },
+              {
+                "key": "block_size",
+                "value": 0
+              }
+            ],
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}
