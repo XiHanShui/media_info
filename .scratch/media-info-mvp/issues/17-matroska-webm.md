@@ -1,6 +1,6 @@
 # Matroska / WebM：规格表 + 叶子提取器
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 13
 
 ## Question / 任务
@@ -39,3 +39,22 @@ Blocked by: 13
 **扩展名不符也要能正确识别**：测试里把本格式的样本复制成**错误的扩展名**（例如 `mislabelled.wav`）到临时目录，断言 `detectFormat` 仍返回本格式。
 
 **约束**：纯 Dart，无新依赖。`flutter analyze` 无 issue。
+
+## Answer
+
+已实现并合并进 `integration/media-info-mvp`。
+
+**规格表是生成的，不是手写的**：`tool/convert_ebml_schema.dart` 解析官方 `ebml_matroska.xml`（快照存 `tool/ebml_matroska.xml`，离线可复现），生成 `lib/src/formats/matroska_schema.dart`——**270 个元素**（官方 262 个 + RFC 8794 的 8 个 EBML 头元素），其中 **50 个 master**、**134 个标记为 WebM 子集**。脚本按 path 排序、带源 XML 的 FNV-1a-64 指纹，重复运行**逐字节一致**。`--fetch` 可重新下载官方 XML。
+
+**公开 API**：`matroskaContainerSpec` / `matroskaFormat`（name = `'Matroska'`，WebM 共用，靠 `container_format` 区分）/ `registerMatroska()` / `extractMatroskaFields()` / `extractMatroskaSemantics()` / `matroskaElementName()` / `decodeMatroskaValue()`。
+
+**EBML 元素 ID 无 ASCII 形式**，核心引擎的节点 `type` 用十六进制字符串（如 `'0x1A45DFA3'`）。渲染结构树时用 `matroskaElementName(type)` 转成规范名。
+
+**两个已知限制（已记入代码文档）**：
+
+1. **未知长度的 `Cluster` 会一直延伸到 Segment 末尾**——核心引擎把未知长度元素收到其*所在区域*的末尾，而 `Cluster` 的 `unknownsizeallowed="1"`。规范上应按 path 判定。表里保留了每个元素的完整 `path` 与 `unknownSizeAllowed`，将来加 path-aware 遍历器不用改表。这是**核心引擎没有注入点**导致的，格式模块改不了。
+2. **截断的 MKV 拿不到轨道级字段**——引擎在 Segment 声明长度超出文件时停止，Segment 退化为不透明叶子，只剩 `container_format` 与 `file_size`。行为是优雅降级（不抛异常、`truncated == true`、有中文错误），但轨道信息不可见。
+
+**另一个需要下游知道的事实**：语义字段需要**解析深度 ≥ 5**（root → Segment → Tracks → TrackEntry → Video/Audio → 叶子），因为 `Video`/`Audio` 的值在第 5 层。核心没有增量展开 API，**展开更深只能重新解析**——应用侧的惰性展开要按这个来设计。
+
+**验证**：`flutter analyze` 无 issue；`flutter test` 53 个测试全过（核心 33 + Matroska 20）；`dart format` 4 个文件 0 变更。
