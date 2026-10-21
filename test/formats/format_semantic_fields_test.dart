@@ -436,16 +436,18 @@ void main() {
       expect(fieldOf(fields, 'bit_depth')!.value, 16);
     });
 
-    test('Matroska 的轨道级字段里没有 frame_rate（已知缺口，见 COVERAGE.md）', () {
+    test('Matroska 的帧率从 DefaultDuration 换算出来（FrameRate 没写时）', () {
       final ParsedDocument doc = parseFixture(
         'mkv_vp9_opus_320x240.normal.mkv',
       );
 
-      expect(
-        fieldOf(doc.tracks[0].fields, 'frame_rate'),
-        isNull,
-        reason: 'MKV 的帧率没有从 DefaultDuration 换算出来',
-      );
+      // MKV 没写 Video/FrameRate（0x2383E3），但写了
+      // TrackEntry/DefaultDuration（每帧多少纳秒）——帧率 = 1e9 / DefaultDuration。
+      final SemanticField? frameRate = fieldOf(doc.tracks[0].fields, 'frame_rate');
+      expect(frameRate, isNotNull, reason: '帧率应该由 DefaultDuration 换算出来');
+      expect(frameRate!.value, 25.0);
+      expect(frameRate.unit, 'fps');
+      expect(frameRate.source, 'TrackEntry/DefaultDuration');
       expect(fieldOf(doc.tracks[0].fields, 'width')!.value, 320);
       expect(fieldOf(doc.tracks[0].fields, 'height')!.value, 240);
     });

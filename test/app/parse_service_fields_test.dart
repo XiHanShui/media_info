@@ -109,8 +109,13 @@ void main() {
       final List<String> keys = doc.fileFields
           .map((SemanticField f) => f.key)
           .toList();
-      expect(keys, <String>['file_name', 'file_size']);
+      expect(keys, <String>['file_name', 'file_size', 'track_count']);
       expect(keys, isNot(contains('container_format')));
+      // 不是媒体文件，自然没有轨道。
+      expect(
+        doc.fileFields.firstWhere((SemanticField f) => f.key == 'track_count').value,
+        0,
+      );
     });
   });
 

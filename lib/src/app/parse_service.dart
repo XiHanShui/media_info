@@ -236,6 +236,7 @@ const Set<String> _centralFileFieldKeys = <String>{
   'file_name',
   'file_size',
   'container_format',
+  'track_count',
 };
 
 /// 组装文件级字段。
@@ -249,8 +250,9 @@ const Set<String> _centralFileFieldKeys = <String>{
 ///    - `file_name` —— 文件名；
 ///    - `file_size` —— 文件字节长度；
 ///    - `container_format` —— MP4 取 `ftyp` 的 major brand（`isom` / `qt  ` /
-///      `mp42`…），Matroska 取 EBML 的 DocType（`Matroska` / `WebM`），
-///      其它格式取格式名（`WAV` / `AIFF` / `FLAC` / `MP3`）。
+///      `mp42`…），Matroska 取 EBML 的 DocType（`matroska` / `webm`），
+///      其它格式取格式名（`WAV` / `AIFF` / `FLAC` / `MP3`）；
+///    - `track_count` —— 轨道数，由轨道级字段的 `trackIndex` 去重数出来。
 ///
 /// `container_format` 的取值直接**取自提取器已经算好的值**（Matroska 的
 /// `container_format` 字段、MP4 的 `brand` 字段），这样核心只有一处真相，
@@ -298,6 +300,14 @@ List<SemanticField> _fileFields(
         scope: FieldScope.file,
         source: containerFormat.source,
       ),
+    SemanticField(
+      key: 'track_count',
+      label: '轨道数',
+      value: _trackCountOf(extracted),
+      unit: '条',
+      scope: FieldScope.file,
+      source: 'tracks',
+    ),
   ];
 
   merged.addAll(kept);
@@ -329,6 +339,16 @@ List<SemanticField> _fileFields(
   }
   if (formatName == null) return null;
   return (value: formatName, source: 'detected_format');
+}
+
+/// 轨道数：轨道级字段里出现过的 `trackIndex` 去重后的个数。
+int _trackCountOf(List<SemanticField> extracted) {
+  final indices = <int>{};
+  for (final field in extracted) {
+    final index = field.trackIndex;
+    if (index != null) indices.add(index);
+  }
+  return indices.length;
 }
 
 /// 把轨道级字段按 `trackIndex` 分组（序号升序）。

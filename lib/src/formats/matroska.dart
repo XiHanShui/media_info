@@ -45,6 +45,9 @@ const String kAudioId = '0xE1';
 /// Cluster 元素（承载媒体载荷）。
 const String kClusterId = '0x1F43B675';
 
+/// DefaultDuration（TrackEntry 的子元素，每帧的纳秒数）。
+const String kDefaultDurationId = '0x23E383';
+
 /// EBML 的通用块头：元素 ID 是变长整数，元素尺寸是变长整数。
 ///
 /// - [HeaderRule.sizeIncludesHeader] 为 false：EBML 的尺寸只算载荷，不含块头；
@@ -101,7 +104,10 @@ FormatSpec get matroskaFormat => _cachedFormat ??= FormatSpec(
 ///
 /// Cluster 在树里的 type 是十六进制元素 ID（`0x1F43B675`），不是 ASCII 名字——
 /// 这类格式知识只能留在格式模块里。
-PositionIndex? buildMatroskaPositionIndex(ContainerNode root, Duration duration) {
+PositionIndex? buildMatroskaPositionIndex(
+  ContainerNode root,
+  Duration duration,
+) {
   final clusters = findNodes(root, kClusterId);
   if (clusters.isEmpty) return null;
 
@@ -109,7 +115,8 @@ PositionIndex? buildMatroskaPositionIndex(ContainerNode root, Duration duration)
   var end = start;
   for (final cluster in clusters) {
     if (cluster.offset < start) start = cluster.offset;
-    if (cluster.offset + cluster.size > end) end = cluster.offset + cluster.size;
+    if (cluster.offset + cluster.size > end)
+      end = cluster.offset + cluster.size;
   }
   if (end <= start) return null;
   return PositionIndex(duration: duration, payload: ByteRange(start, end));
@@ -398,6 +405,19 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
         unit: 'fps',
         source: 'Video/FrameRate',
       );
+    } else {
+      // Matroska 的 FrameRate（0x2383E3）几乎没人写；常见的是
+      // DefaultDuration（每帧多少纳秒），帧率 = 1e9 / DefaultDuration。
+      final defaultDuration = _intOf(entry, kDefaultDurationId);
+      if (defaultDuration != null && defaultDuration > 0) {
+        add(
+          'frame_rate',
+          '帧率',
+          1000000000 / defaultDuration,
+          unit: 'fps',
+          source: 'TrackEntry/DefaultDuration',
+        );
+      }
     }
 
     final audio = _childOf(entry, kAudioId);
