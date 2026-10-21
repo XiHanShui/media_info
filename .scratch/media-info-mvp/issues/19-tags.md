@@ -1,6 +1,6 @@
 # 标签提取：MP4 udta/ilst、FLAC Vorbis Comment、MP3 ID3v2
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 14, 15, 16, 18
 
 ## Question / 任务
@@ -25,3 +25,31 @@ Blocked by: 14, 15, 16, 18
 **测试**（`test/formats/tags_test.dart`）：素材里的 ffmpeg 默认不写标签，需要**在测试里现造**带标签的文件（用 `tool/gen_fixtures.dart` 同款手法写最小字节序列），断言能解出 key/value；再用真实素材断言"没有标签时返回空列表而不是崩"。
 
 **约束**：纯 Dart，无新依赖。`flutter analyze` 无 issue。
+
+## Answer
+
+已实现并合并进 `integration/media-info-mvp`。
+
+**唯一的契约变更**：`collectTags` 多了一个**可选命名参数** `source`（`ByteSource`）：
+
+```dart
+List<Tag> collectTags(ContainerNode root, {ByteSource? source});
+```
+
+原因：节点不携带字节（`ContainerNode` 只有偏移量），而每种标签的载荷都要从字节里解码。**不传 `source` 会得到空列表**——不是报错，是静默地没有标签。UI 契约已同步更新。
+
+**各格式产出的 key**（**一律原样，不翻译**）：
+
+| 格式 | 来源 | key | 值 |
+|---|---|---|---|
+| MP4 | `ilst` | `©nam`、`©ART`、`©alb`、`trkn`、`covr`… | 文本给 String；`covr` 封面给 `Uint8List`；`trkn`（iTunes 的 8 字节布局）渲染成 `"3/12"` |
+| FLAC | `VORBIS_COMMENT` | `TITLE`、`ARTIST`、`ENCODER`… | String；另加一个 `vendor`（编码器厂商串） |
+| MP3 | `ID3v2` | `TIT2`、`TPE1`、`TALB`… | String（只解文本帧 `T***`，除 `TXXX`） |
+
+**值的类型域恰好是 `String | Uint8List | null`**——整数的 `data` type code（21/22）也渲染成十进制**字符串**，这样 UI 只需处理两种情况：`value is Uint8List` → 二进制，其余 → 文本。
+
+**容错**：永不抛异常（每段都包了 `on Object catch`）。未知的 `data` type code 保留原始 `Uint8List`；解不出来的 item/帧直接跳过，其余标签照常产出。MP4 的 `meta` FullBox 检测是启发式的（首字节 == 0），QuickTime 风格的无 version/flags 的 `meta` 也支持。`data` 的 type 字段**两种编码都认**：规范式 `01 00 00 00` 与 ffmpeg 式 `00 00 00 01`（真实素材是后者）。ID3v2.3（普通整数帧长）与 2.4（syncsafe）都支持；v2.2 不产出标签；ID3v1 不在范围内。
+
+**给 UI 的提醒**：重复 key 是正常的（`covr` 可以有多个，一个 `data` box 一个标签）——渲染成列表而不是 map。
+
+**验证**：`flutter analyze` 无 issue；全量测试通过；新增 `test/formats/tags_test.dart`（21 个测试），覆盖真实素材（MP4 的 `©too`、FLAC 的 `encoder`、MP3 的 `TSSE`、WAV → 空）+ 合成字节文件（多标签 MP4、二进制 `covr`、`trkn`、畸形 `data` box、没有 `=` 的 Vorbis 条目、撒谎的长度字段、ID3v2.3/2.4、非文本帧、垃圾输入）。

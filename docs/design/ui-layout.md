@@ -111,6 +111,25 @@ String? checkExtension(String path, String? detectedFormat);
 - 路径不存在 → 该标签页显示"文件不存在"，**不影响其它标签页**
 - 这是**唯一的自动化入口**（文件选择对话框是系统窗口，测不了）
 
+## 标签
+
+```dart
+/// 按树的形状分派收集标签。
+List<Tag> collectTags(ContainerNode root, {ByteSource? source});
+```
+
+**`source` 必须传。** 节点不携带字节（`ContainerNode` 只有偏移量），而每一种标签的载荷都要从字节里解码
+（MP4 的 `data` box、Vorbis comment、ID3 帧体）。不传 `source` 会得到**空列表**——不是报错，是静默地没有标签。
+
+**渲染规则**：
+
+- `value is Uint8List` → 二进制值（如封面图），显示成「封面, 12.3 KB」之类；其余一律当文本。
+- **key 原样显示**（`©nam` / `TITLE` / `TIT2`），不翻译、不美化。`©` 是 U+00A9。
+- **重复 key 是正常的**（`covr` 可以有多个，一个 `data` box 一个标签）——渲染成列表，不要用 map。
+- `source` 是 `ilst` / `VORBIS_COMMENT` / `ID3v2` 三者之一，可用作分组标签。
+- FLAC 会多吐一个 `vendor`（编码器厂商串，键名 `vendor`），不是用户标签——不想显示就滤掉。
+- 标签是**独立的区段**，排在轨道级之后，不混进语义字段列表。
+
 ## 界面文案
 
 - 界面文案**中文**
