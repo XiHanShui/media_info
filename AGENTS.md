@@ -1,8 +1,12 @@
 # media_info — Agent Notes
 
-Flutter desktop app (`media_info`). Currently a **fresh `flutter create` scaffold**: `lib/main.dart` is still the stock
-counter demo, and the only dependency besides Flutter SDK is `cupertino_icons`. There is no real feature code yet —
-do not assume the demo UI is the intended product.
+Flutter desktop app (`media_info`) for inspecting audio/video files. The parsing core
+(`lib/src/core/`: node model, spec-table DSL, generic container engine, format registry) is
+implemented, as are the format modules under `lib/src/formats/`. The Flutter UI is still the
+scaffold counter demo — do not assume the demo UI is the intended product.
+
+**The implementation-layer contracts are `docs/design/core-api.md`** (parsing core) and
+**`docs/design/ui-layout.md`** (UI). Both are binding on parallel work — read them before writing code.
 
 ## Codebase memory (codebase-memory-mcp)
 
@@ -10,6 +14,7 @@ Project name in the graph: **`G-WS-media_info`** (reindex with `index_repository
 
 - **Known false positive**: every Dart file that uses the Dart 3 unnamed `library;` directive is reported as `parse_partial` at exactly that line (e.g. `lib/src/core/spec.dart:5`, `lib/src/formats/{riff,flac,mp3}.dart`). The line carries no declarations, so **nothing is actually missing from the graph** — ignore these flags.
 - `check_index_coverage` reports `freshness: metadata_changed` right after any reindex; re-run it before trusting `status`.
+- **`CALLS` edges are incomplete.** A "function with no inbound CALLS edge" is NOT proof of dead code: intra-file calls to private helpers are often missing (verified — 7 engine/format helpers looked orphaned but all are called), and functions passed as *references* (e.g. a `detect` callback handed to `FormatSpec`) never appear as calls at all. **Always confirm with `search_code`/grep before deleting anything.**
 
 **Use the graph, not grep, for discovery.** It already caught things grep missed: two parallel dispatch entry points (`registry.parseFormat` vs. a format module's own copy) and a `FormatSpec.parser` that was never wired on one format.
 
