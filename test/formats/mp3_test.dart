@@ -61,7 +61,7 @@ void main() {
       expect(fields['bitrate_mode']?.label, '码率模式');
       expect(fields['sample_rate']?.value, 44100);
       expect(fields['sample_rate']?.unit, 'Hz');
-      expect(fields['channel_mode']?.value, 'Mono');
+      expect(fields['channel_mode']?.value, 'Stereo');
       expect(fields['channel_mode']?.label, '声道模式');
       expect(fields['padding']?.value, 0);
       expect(fields['samples_per_frame']?.value, 1152);
@@ -80,7 +80,7 @@ void main() {
       expect(fields['codec']?.label, '编码标识');
       expect(fields['sample_rate']?.value, 44100);
       expect(fields['sample_rate']?.unit, 'Hz');
-      expect(fields['channels']?.value, 1);
+      expect(fields['channels']?.value, 2);
       expect(fields['channels']?.label, '声道数');
       expect(fields['duration']?.value, closeTo(0.313469, 1e-6));
       expect(fields['duration']?.unit, 's');

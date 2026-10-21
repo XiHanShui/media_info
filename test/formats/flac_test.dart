@@ -68,7 +68,7 @@ void main() {
       expect(result.error, isNull);
       expect(result.root.type, 'FLAC');
       expect(result.root.offset, 0);
-      expect(result.root.size, 11432);
+      expect(result.root.size, 11450);
 
       expect(result.root.children.map((c) => c.type), [
         'STREAMINFO',
@@ -118,14 +118,13 @@ void main() {
 
       expect(values['min_block_size'], 4608);
       expect(values['max_block_size'], 4608);
-      expect(values['min_frame_size'], 658);
-      expect(values['max_frame_size'], 1246);
+      expect(values['min_frame_size'], 588);
+      expect(values['max_frame_size'], 1288);
       expect(values['sample_rate'], 44100);
-      // 样本文件名叫 stereo，但里面实际只有 1 个声道（ffprobe 也是 1）。
-      expect(values['channels'], 1);
+      expect(values['channels'], 2);
       expect(values['bits_per_sample'], 16);
       expect(values['total_samples'], 11025);
-      expect(values['md5'], '02e51bdbaa961229fcc721869bb43385');
+      expect(values['md5'], 'f71656b039680036049eae0992606cfe');
     });
 
     test('24bit / 96kHz 样本解出同样的位域', () {
@@ -240,7 +239,7 @@ void main() {
       expect(_byKey(fields, 'bit_depth')?.label, '位深');
       expect(_byKey(fields, 'bit_depth')?.unit, 'bit');
 
-      expect(_byKey(fields, 'channels')?.value, 1);
+      expect(_byKey(fields, 'channels')?.value, 2);
       expect(_byKey(fields, 'channels')?.label, '声道数');
 
       expect(_byKey(fields, 'codec')?.value, 'FLAC');
@@ -250,7 +249,7 @@ void main() {
       expect(_byKey(fields, 'duration')?.label, '时长');
       expect(_byKey(fields, 'duration')?.unit, 's');
 
-      expect(_byKey(fields, 'overall_bitrate')?.value, 11432 * 8 / 0.25);
+      expect(_byKey(fields, 'overall_bitrate')?.value, 11450 * 8 / 0.25);
       expect(_byKey(fields, 'overall_bitrate')?.label, '平均码率');
       expect(_byKey(fields, 'overall_bitrate')?.unit, 'bit/s');
     });
@@ -275,7 +274,7 @@ void main() {
 
       expect(totalSamples?.value, 11025);
       expect(totalSamples?.label, '总采样数');
-      expect(md5?.value, '02e51bdbaa961229fcc721869bb43385');
+      expect(md5?.value, 'f71656b039680036049eae0992606cfe');
       expect(md5?.label, 'MD5 校验和');
 
       // 格式特有字段不进统一词表。
@@ -302,8 +301,8 @@ void main() {
       // 被截断的块留在树里，长度裁到实际可用的字节数。
       final padding = result.root.children.last;
       expect(padding.isOpaque, isTrue);
-      expect(padding.dataSize, 6859 - 94);
-      expect(padding.size, 4 + 6859 - 94);
+      expect(padding.dataSize, 6870 - 94);
+      expect(padding.size, 4 + 6870 - 94);
     });
 
     test('截断样本的语义字段仍然能解出来', () {
@@ -373,8 +372,8 @@ void main() {
       expect(detected?.extractor, isNotNull);
     });
 
-    test('parseFormatContainer 对 FLAC 走手写解析器', () {
-      final result = parseFormatContainer(
+    test('核心的 parseFormat 对 FLAC 走手写解析器', () {
+      final result = parseFormat(
         flacFormat,
         _fixture('flac_s16_44100_stereo.normal.flac'),
       );
