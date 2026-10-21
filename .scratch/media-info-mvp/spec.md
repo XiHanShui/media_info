@@ -33,12 +33,12 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 |---|---|---|
 | 统一节点模型与双视图的数据来源 | [统一节点模型与双视图的数据来源](issues/01-unified-node-model.md) | 节点 schema、字段挂哪一级、结构树是否惰性展开 |
 | 容器格式能否用声明式规格表描述 | [容器格式能否用声明式规格表描述](issues/02-declarative-parsers.md) | 解析层是"N 个解析器"还是"N 张表 + 1 个引擎" |
-| 现成方案的结构深度 | [MediaInfo / ffprobe 到底能给出多深的结构](issues/03-mediainfo-ffprobe-depth.md) | 是否动摇"纯 Dart 自研"前提 |
 | 测试素材获取与归档 | [测试素材获取与归档](issues/04-test-fixtures.md) | 接缝能跑起来的前提：样本从哪来、怎么放 |
 | 字节访问与大文件策略 | [字节访问与大文件策略](issues/06-byte-access-large-files.md) | 随机访问 vs 映射 vs 流式；64 位长度；截断文件行为 |
 | 界面布局与多文件交互 | [界面布局与多文件交互](issues/07-ui-layout-prototype.md) | 分栏形态、hex 侧栏位置、标签页组织 |
 | 统一语义字段词表 | [统一语义字段词表](issues/08-field-vocabulary.md) | 字段的英文技术名、中文显示名、跨格式归一方式 |
 | 标签 / 元数据与语义字段的边界 | [标签 / 元数据与语义字段的边界](issues/09-tag-vs-field-boundary.md) | MP4 udta/ilst、FLAC Vorbis Comment、ID3 要不要看 |
+| 以 MediaTrace 作为结构树的离线校验基准 | [以 MediaTrace 作为结构树的离线校验基准](issues/12-mediatrace-offline-oracle.md) | 要不要拿 MediaInfo 的输出当"有没有漏块"的对照基准 |
 | CI 双平台构建 | [CI 双平台构建](issues/10-ci-dual-platform.md) | 构建矩阵、产物形态、缓存 |
 | 分发形态与签名 | [分发形态与签名](issues/11-distribution-form.md) | 用户最终拿到 zip 还是安装包 |
 
@@ -129,8 +129,9 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 
 **解析层**
 
-- 每种格式一个解析器，纯 Dart 手写，不引入 C/C++、FFmpeg 或 MediaInfoLib。
+- 每种格式一个解析器，纯 Dart 手写，不引入 C/C++、FFmpeg 或 MediaInfoLib。**理由**：我们要的是**原始结构 + 结构化数据**；现成方案给的都是**解读 + 文本 blob**——MediaInfo 的 MediaTrace 虽是带 offset 与 size 的真块树，但那是它自己的语义解读树（块名被换成 `Element_Name("File Type")` 之类的标签、未知块被折叠、大块只给 "(N bytes)" 摘要、**无 hex**），而且只能拿到一整块预渲染的 XML 文本，真正的树对象在 C++ 内部不导出；FFmpeg 则根本没有块树（`av_dump_format` 只打印元数据，`AVIO_FLAG_TRACE` 已从 master 移除）。引入任一原生库还会立刻加上"必须有 macOS 构建机"的硬约束——`flutter build macos` 在非 macOS 主机上直接报错退出。详见 [调研结论](../../docs/research/03-mediainfo-ffprobe-depth.md)。
 - 解析器通过一个注册表接入，扩展点是"新增一个解析器 + 一张格式描述"，不需要改动引擎骨架。
+- 每种容器只写一个**块头扫描器**，产出统一节点模型的最小四元组——`type`（文件里字面的块类型名）+ `offset` + `size` + `children`——语义字段再从同一棵树上**推导**，这样字段与结构树的位置天然一致。各容器的块头布局已知：ISO BMFF 是 8/16 字节 box 头（`size == 1` 走 64 位扩展，`size == 0` 到文件尾）、RIFF 是 `id + LE32 size`、EBML 是 element id + VINT size（含未知长度哨兵）、FLAC 是元数据块（last-metadata-block 标志 + 24 位长度）、MP3 是帧序列（**这一档没有真正的块树**，按帧列表呈现）。原始 hex 由 Dart 侧按 offset/size 自行从文件读取。
 - 节点模型统一承载两种视图：结构树与语义字段从同一份数据派生，节点携带名称、类型、偏移量、长度、字段值与子节点（确切 schema 待[统一节点模型与双视图的数据来源](issues/01-unified-node-model.md)定）。
 - 解析层是"N 个命令式解析器"还是"N 张声明式规格表 + 1 个通用引擎"，待[容器格式能否用声明式规格表描述](issues/02-declarative-parsers.md)结论；这个选择显著影响后续所有实现的工作量。
 - 字节读取策略、64 位长度（`largesize` / `co64`）、以及大文件下的惰性展开行为，待[字节访问与大文件策略](issues/06-byte-access-large-files.md)定。
@@ -181,11 +182,13 @@ MVP 覆盖的格式：WAV、AIFF、FLAC、MP3（音频方向）与 MP4/MOV、MKV
 
 **测试目标** —— 每个目标格式（WAV、AIFF、FLAC、MP3、MP4、MOV、MKV、WebM）至少覆盖三类样本：正常样本、边界样本（最小尺寸、罕见但合法的参数组合）、损坏样本（截断、长度字段撒谎、未知块）。
 
+**已知的覆盖盲区** —— 用自己产的 golden 文件做基准，有一个结构性盲区：**"解析器从一开始就漏了某个块"这类 bug 测不出来**，因为 golden 也是我们自己产的，漏了就是两边一起漏。是否引入 MediaInfo 的 MediaTrace XML 作**离线**对照基准（只作 CI 里的对照工具，不进产品二进制；且只单向可用——"MediaTrace 有、我们没有"是我们错，"它漏了我们有"不一定），待 [以 MediaTrace 作为结构树的离线校验基准](issues/12-mediatrace-offline-oracle.md) 定。
+
 ## Out of Scope
 
 - **播放 / 转码 / 预览** —— 本工具只读元数据与结构，不解码媒体。
 - **编辑 / 改写文件** —— 只读工具，不写回容器。
-- **原生解析后端（FFmpeg / MediaInfoLib）** —— MVP 纯 Dart。若[现成方案的结构深度](issues/03-mediainfo-ffprobe-depth.md)推翻了此前提，作为新 effort 重新评估，而不是在本 effort 内改道。
+- **原生解析后端（FFmpeg / MediaInfoLib）** —— MVP 纯 Dart。**已定**：[调研结论](../../docs/research/03-mediainfo-ffprobe-depth.md) 确认前提成立（理由已改写为"现成方案给的是解读与文本，我们要的是原始结构与结构化数据"）。若将来要引，作为新 effort 重新评估，而不是在本 effort 内改道。
 - **命令行 / 文件关联 / 系统右键菜单集成** —— MVP 只有 GUI。
 - **macOS 签名与公证（notarization）** —— 需要付费 Apple Developer 账号，自成一个后续 effort。
 - **移动端 / Web 端** —— 本 effort 只做 Windows + macOS 桌面。

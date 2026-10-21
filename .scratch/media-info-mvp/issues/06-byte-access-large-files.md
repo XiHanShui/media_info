@@ -17,4 +17,6 @@ Blocked by: 01
 
 **产出**：字节访问层方案 + 大文件与截断文件的行为约定（写清楚"遇到 X 时，界面显示什么"）。
 
-**为什么阻塞于票 01**：节点模型决定了树里要不要带偏移量、以及能不能惰性展开——这两点直接决定本票的答案。
+**为什么阻塞于[统一节点模型与双视图的数据来源](01-unified-node-model.md)**：节点模型决定了树里要不要带偏移量、以及能不能惰性展开——这两点直接决定本票的答案。
+
+**先例（来自[MediaInfo / ffprobe 到底能给出多深的结构](03-mediainfo-ffprobe-depth.md)）**：各容器的块头布局已知——ISO BMFF 是 8/16 字节 box 头（`size == 1` 走 64 位扩展，`size == 0` 表示到文件尾）；RIFF 是 `id + LE32 size`，容器型递归（`LIST`/`RIFF` 带 form type）；EBML 是 element id + VINT size（含"未知长度"哨兵）；FLAC 是元数据块（last-metadata-block 标志 + 24 位长度）；MP3 是帧头（ID3v2 前缀 + 帧序列），**这一档没有真正的块树**，按帧列表呈现即可。原始 hex 由 Dart 侧按 offset/size 自行从文件读取——不依赖任何外部库。

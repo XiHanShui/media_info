@@ -14,7 +14,7 @@ GitHub Actions 上用什么矩阵同时构建 Windows 与 macOS？**具体产出
 - **产物**：Windows 侧 `flutter build windows` 产出的是一个目录（不是一个 exe），要打成 zip；macOS 侧 `flutter build macos` 产出 `.app` 目录，打成 tar.gz。命名要带版本号与平台。
 - **缓存**：`pub` 的包缓存、Flutter SDK 缓存（用 `subosito/flutter-action`）、Windows 的 CMake 构建目录。
 - **踩坑预防**：本机 pub 走的是 `pub.flutter-io.cn` 镜像——**CI 上不要**带这两个环境变量，用官方源，否则下载行为与本地不一致且可能更慢。
-- **签名**：这一步先留空还是留占位（票 11 会定分发形态，macOS 签名/公证已划到本 effort 之外）？
+- **签名**：这一步先留空还是留占位（[分发形态与签名](11-distribution-form.md) 会定分发形态，macOS 签名/公证已划到本 effort 之外）？
 
 **产出**：一个能跑的 workflow，push 上 main 并验证一次绿色。
 
