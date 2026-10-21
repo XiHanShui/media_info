@@ -31,6 +31,16 @@ Set<String> _typesOf(ContainerNode node) {
   return types;
 }
 
+/// 深度优先找第一个类型为 [type] 的块。
+ContainerNode? _find(ContainerNode node, String type) {
+  for (final child in node.children) {
+    if (child.type == type) return child;
+    final found = _find(child, type);
+    if (found != null) return found;
+  }
+  return null;
+}
+
 /// 按 key（可选按轨道序号）取语义字段。
 SemanticField? _field(
   List<SemanticField> fields,
@@ -76,6 +86,14 @@ void main() {
       expect(root.size, 11658);
       final topTypes = root.children.map((c) => c.type).toList();
       expect(topTypes, containsAll(['ftyp', 'free', 'mdat', 'moov']));
+    });
+
+    test('dref 里的 url 数据引用条目在结构树里', () {
+      final root = _parse(mp4).root;
+
+      final dref = _find(root, 'dref');
+      expect(dref, isNotNull);
+      expect(dref!.children.map((c) => c.type).toList(), ['url ']);
     });
 
     test('MP4 文件级语义字段', () {

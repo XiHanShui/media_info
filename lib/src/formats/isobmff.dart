@@ -36,6 +36,17 @@ const HeaderRule _isoHeader = HeaderRule(
   sizeFirst: true,
 );
 
+/// `dref` 的载荷前面有 8 字节（version/flags + entry_count），跳过才是子块。
+const HeaderRule _drefHeader = HeaderRule(
+  typeBytes: 4,
+  sizeBytes: 4,
+  sizeIncludesHeader: true,
+  sizeZeroMeansToEof: true,
+  extendedSizeWhenOne: true,
+  sizeFirst: true,
+  prefixBytes: 8,
+);
+
 /// 视觉 sample entry（`avc1`/`hvc1`/`mp4v`…）的固定字段。
 ///
 /// 字段从 sample entry 的载荷起点开始（块头之后）。
@@ -189,14 +200,25 @@ const ChildSpec _sthdSpec = ChildSpec(
   ],
 );
 
-/// `dref`（FullBox）。它内部是 `url `/`urn ` 块，但载荷以 FullBox 头开头，
-/// 通用引擎无法跳过前缀继续递归，故这里只读到 entry_count。
+/// `dref`（FullBox）。它的载荷开头是 8 字节（version/flags + entry_count），
+/// 之后才是 `url `/`urn ` 块——用 [HeaderRule.prefixBytes] 跳过。
 const ChildSpec _drefSpec = ChildSpec(
   type: 'dref',
+  container: _drefContainer,
   fields: [
     FieldSpec('version', type: FieldType.uint8),
     FieldSpec('flags', type: FieldType.uint24),
     FieldSpec('entry_count', type: FieldType.uint32),
+  ],
+);
+
+/// `url `（数据引用条目）。载荷是 version/flags + 以 NUL 结尾的 location。
+const ChildSpec _urlSpec = ChildSpec(
+  type: 'url ',
+  fields: [
+    FieldSpec('version', type: FieldType.uint8),
+    FieldSpec('flags', type: FieldType.uint24),
+    FieldSpec('location', type: FieldType.utf8),
   ],
 );
 
@@ -483,7 +505,7 @@ const ChildSpec _btrtSpec = ChildSpec(type: 'btrt', opaque: true);
 const ChildSpec _waveSpec = ChildSpec(type: 'wave', opaque: true);
 
 /// `dref` 里的数据引用条目（`url ` / `urn `）。
-const ChildSpec _urlSpec = ChildSpec(type: 'url ', opaque: true);
+/// `urn `（数据引用条目）：载荷是 version/flags + 名字 + location。
 const ChildSpec _urnSpec = ChildSpec(type: 'urn ', opaque: true);
 
 // --- 不透明叶子 --------------------------------------------------------------
@@ -516,9 +538,11 @@ const ChildSpec _trunSpec = ChildSpec(type: 'trun', opaque: true);
 
 /// `stsd` 载荷的二级结构：sample entry 及其内部的编解码配置块。
 ///
-/// 受通用引擎限制（载荷以 FullBox 的 version/flags/entry_count 开头，引擎无法
-/// 在跳过前缀后继续递归），这张表目前只用于**声明**二级结构；sample entry 的
-/// 字段由 `stsd` 的 `dispatchOn` 内联读出。
+/// 这张表目前只用于**声明**二级结构；sample entry 的字段由 `stsd` 的
+/// `dispatchOn` 内联读出（引擎的分派语义：分派命中的二级表的字段接在分派块
+/// 的字段之后读）。sample entry 自己**没有**成为结构树里的节点——它的载荷
+/// 前面是长度随类型/版本变化的定长头（视觉 78 字节、音频 28 或 44 字节），
+/// `HeaderRule.prefixBytes` 只能跳固定长度，跳不对就会读出假块。
 const ContainerSpec _stsdContainer = ContainerSpec(
   name: 'stsd',
   header: _isoHeader,
@@ -632,13 +656,18 @@ const ContainerSpec _stblContainer = ContainerSpec(
   },
 );
 
-/// `dinf`（数据引用）。`dref` 内部的 `url `/`urn ` 块声明在这里——受引擎限制
-/// （`dref` 载荷以 FullBox 头开头，无法跳过前缀继续递归），它们目前不会出现在
-/// 结构树里。
+/// `dinf`（数据引用）。`dref` 内部的 `url `/`urn ` 块在 [_drefContainer] 里展开。
 const ContainerSpec _dinfContainer = ContainerSpec(
   name: 'dinf',
   header: _isoHeader,
-  children: {'dref': _drefSpec, 'url ': _urlSpec, 'urn ': _urnSpec},
+  children: {'dref': _drefSpec},
+);
+
+/// `dref` 的载荷容器：开头 8 字节是 version/flags + entry_count，跳过才是子块。
+const ContainerSpec _drefContainer = ContainerSpec(
+  name: 'dref',
+  header: _drefHeader,
+  children: {'url ': _urlSpec, 'urn ': _urnSpec},
 );
 
 const ContainerSpec _minfContainer = ContainerSpec(
