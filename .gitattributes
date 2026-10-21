@@ -1,0 +1,42 @@
+# 文本文件统一用 LF 检出，避免跨平台 diff 噪音与快照比对失败。
+# （git 在 Windows 上默认把 LF 转成 CRLF，golden 快照就是这么对不上的。）
+* text=auto
+
+*.dart   text eol=lf
+*.json   text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.md     text eol=lf
+*.txt    text eol=lf
+*.xml    text eol=lf
+*.cmake  text eol=lf
+*.sh     text eol=lf
+
+# Windows 批处理与 PowerShell 脚本按惯例用 CRLF。
+*.ps1    text eol=crlf
+*.bat    text eol=crlf
+*.cmd    text eol=crlf
+
+# 二进制：不做任何换行转换。
+*.ico    binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.dll    binary
+*.exe    binary
+*.so     binary
+*.dylib  binary
+*.a      binary
+*.lib    binary
+*.zip    binary
+*.7z     binary
+*.mp4    binary
+*.mov    binary
+*.mkv    binary
+*.webm   binary
+*.wav    binary
+*.aiff   binary
+*.flac   binary
+*.mp3    binary
