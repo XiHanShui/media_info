@@ -36,6 +36,8 @@
 
 **仓库约定**：票存于 `.scratch/media-info-mvp/issues/`，本文件即地图。追踪器总约定见 `docs/agents/issue-tracker.md`。
 
+**实现阶段**：12 张决策票已全部解完，规格已完整。实现工作在 `integration/media-info-mvp` 分支上进行，实现票为 13–25 号（`Status: ready-for-agent` → `Status: resolved`）。**实现层的强制契约是 `docs/design/core-api.md`**——并行开发的 agent 靠它对齐，任何偏离都会导致分支无法合并。
+
 ## Decisions so far
 
 <!-- 一行一条：已关闭票的标题 + 一句话结论。详情在票内。 -->
