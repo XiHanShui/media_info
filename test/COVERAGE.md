@@ -10,7 +10,7 @@
 >   - `未覆盖` —— 没有对应测试，并说明原因；
 >   - `与实现矛盾` —— 测试存在但**当前是失败的**，说明实现与规格相悖（见文末「已知缺陷」）。
 >
-> 本次新增的测试文件（15 个，404 个测试）：
+> 本次新增的测试文件（15 个，405 个测试）：
 
 | 文件 | 测试数 | 覆盖的主题 |
 |---|---|---|
@@ -18,17 +18,17 @@
 | `test/core/engine_contract_test.dart` | 39 | 通用容器引擎契约 |
 | `test/core/registry_contract_test.dart` | 17 | 格式注册表与嗅探顺序 |
 | `test/formats/format_structure_test.dart` | 47 | 各格式的结构树 |
-| `test/formats/format_semantic_fields_test.dart` | 44 | 各格式的语义字段 |
+| `test/formats/format_semantic_fields_test.dart` | 45 | 各格式的语义字段 |
 | `test/app/semantic_view_render_test.dart` | 38 | 语义字段视图渲染 |
 | `test/app/export_json_shape_test.dart` | 24 | 导出 JSON 的形状 |
 | `test/app/parse_service_fields_test.dart` | 25 | 解析服务的字段补齐与错误 |
 | `test/app/extension_mismatch_test.dart` | 20 | 扩展名不一致提示 |
 | `test/app/file_strip_layout_test.dart` | 19 | 胶片条布局与配色 |
-| `test/app/app_shell_workflow_test.dart` | 20 | 应用外壳交互 |
+| `test/app/app_shell_workflow_test.dart` | 18（其中 2 条**故意失败**，见缺陷 #1/#2） | 应用外壳交互 |
 | `test/app/copy_value_format_test.dart` | 30 | 复制到剪贴板的文本格式 |
 | `test/ui/structure_tree_columns_test.dart` | 26 | 结构树的行、列与展开 |
 | `test/ui/hex_panel_render_test.dart` | 26 | hex 面板渲染 |
-| `test/platform/packaging_test.dart` | 18 | 平台、CI、不联网、样本齐备 |
+| `test/platform/packaging_test.dart` | 17（其中 1 条**故意失败**，见缺陷 #3） | 平台、CI、不联网、样本齐备 |
 
 辅助文件：`test/support/document_builder.dart`（造 `ParsedDocument` / `ContainerNode` / `SemanticField` / `Tag` 的 helper，无测试）。
 
