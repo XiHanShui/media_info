@@ -354,23 +354,41 @@ void main() {
     });
   });
 
-  group('已知限制（lib/ 的 detect 实现，待另开票修）', () {
-    test(
-      '没有 ftyp 块的老式 MOV 认不出来',
-      () {
-        // MP4 的 detect 只看偏移 4 的 `ftyp`。老式 QuickTime 文件（第一个块
-        // 是 moov / mdat，没有 ftyp）因此认不出来，分片 MP4（styp / moof）
-        // 同理。这是 lib/ 的限制，不是嗅探顺序的问题。
-        const List<int> legacyMov = [
-          0x00, 0x00, 0x00, 0x14, 0x6D, 0x6F, 0x6F, 0x76, //
-          0x00, 0x00, 0x00, 0x00,
-        ];
-        expect(_detectName(_writeTempFile('legacy.mov', legacyMov)), isNull);
-      },
-      skip:
-          'lib/ 的 _detectIsoBmff 只看偏移 4 的 ftyp，认不出没有 ftyp 块的'
-          '老式 MOV / 分片 MP4。修复要改 lib/，不在本票范围内。',
-    );
+  group('没有 ftyp 块的 ISO base media 也能认出来', () {
+    test('老式 QuickTime（首块是 moov）', () {
+      // 传统 QuickTime 的第一个 box 是 moov / mdat，没有 ftyp。
+      // 修复后 _detectIsoBmff 会走顶层 box 链，而不是死盯偏移 4。
+      const List<int> legacyMov = [
+        0x00, 0x00, 0x00, 0x14, 0x6D, 0x6F, 0x6F, 0x76, //
+        0x00, 0x00, 0x00, 0x00,
+      ];
+      expect(_detectName(_writeTempFile('legacy.mov', legacyMov)), 'MP4');
+    });
+
+    test('分片 MP4（首块是 styp / moof）', () {
+      const List<int> fragmented = [
+        0x00, 0x00, 0x00, 0x10, 0x73, 0x74, 0x79, 0x70, //
+        0x00, 0x00, 0x00, 0x00,
+      ];
+      expect(_detectName(_writeTempFile('fragmented.mp4', fragmented)), 'MP4');
+    });
+
+    test('QuickTime 的 wide 填充块', () {
+      const List<int> wideFirst = [
+        0x00, 0x00, 0x00, 0x10, 0x77, 0x69, 0x64, 0x65, //
+        0x00, 0x00, 0x00, 0x00,
+      ];
+      expect(_detectName(_writeTempFile('wide.mov', wideFirst)), 'MP4');
+    });
+
+    test('长度字段不合理的假 ftyp 不被认成 MP4', () {
+      // "XXXXftyp" —— 偏移 4 确实是 ftyp，但前面的长度字段荒谬。
+      const List<int> bogus = [
+        0xFF, 0xFF, 0xFF, 0xFF, 0x66, 0x74, 0x79, 0x70, //
+        0x00, 0x00, 0x00, 0x00,
+      ];
+      expect(_detectName(_writeTempFile('bogus.mp4', bogus)), isNull);
+    });
   });
 
   group('detect 只读文件头', () {
