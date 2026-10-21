@@ -5,8 +5,10 @@ Flutter desktop app (`media_info`) for inspecting audio/video files. The parsing
 implemented, as are the format modules under `lib/src/formats/`. The Flutter UI is still the
 scaffold counter demo — do not assume the demo UI is the intended product.
 
-**The implementation-layer contracts are `docs/design/core-api.md`** (parsing core) and
-**`docs/design/ui-layout.md`** (UI). Both are binding on parallel work — read them before writing code.
+**The implementation-layer contracts are `docs/design/core-api.md`** (parsing core),
+**`docs/design/ui-layout.md`** (UI layout/ownership) and **`docs/design/visual-language.md`**
+(colors, type, layout). All three are binding on parallel work — read them before writing code.
+Colors and type styles live in `lib/src/app/theme.dart`; use those constants, never inline hex.
 
 ## Codebase memory (codebase-memory-mcp)
 
