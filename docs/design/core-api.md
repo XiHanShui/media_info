@@ -269,15 +269,25 @@ FormatSpec? detectFormat(ByteSource source);
 class Tag {
   const Tag({required this.key, this.value, this.source});
   final String key;      // 英文原名，不翻译
-  final Object? value;
-  final String? source;
+  final Object? value;   // String（文本）或 Uint8List（二进制，如封面）
+  final String? source;  // 来自哪个块：'ilst' / 'VORBIS_COMMENT' / 'ID3v2'
 }
 
 /// 标签的收集结果。
-List<Tag> collectTags(ContainerNode root);
+///
+/// [source] 是字节源：标签载荷（`data` 盒、Vorbis 注释、ID3 帧体）要现读字节，
+/// 所以不传字节源就解不出标签（返回空列表）。
+List<Tag> collectTags(ContainerNode root, {ByteSource? source});
 ```
 
 MP4 的 `udta`/`meta`/`ilst`、FLAC 的 Vorbis Comment、MP3 的 ID3v2 各自实现，产出统一的 `Tag` 列表。
+
+- **key 保留英文原名**（`©nam`、`TITLE`、`TIT2` 都不翻译）。
+- **value 只有两种形态**：`String`（文本）与 `Uint8List`（二进制，如 `covr` 封面）。
+- **坏掉的标签区域跳过，不抛异常**：不认识的标签类型、长度撒谎、缺字节都只是跳过，
+  不影响同一文件里的其它标签。
+- 覆盖范围：MP4 `ilst`（含二进制封面）、FLAC `VORBIS_COMMENT`、MP3 ID3v2.3/2.4 的
+  文本帧 `T***`（ID3v1 与 Matroska 的 Tags 不在本 MVP 范围）。
 
 ## 8. 错误类型
 
