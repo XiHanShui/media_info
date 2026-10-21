@@ -4,6 +4,15 @@ Flutter desktop app (`media_info`). Currently a **fresh `flutter create` scaffol
 counter demo, and the only dependency besides Flutter SDK is `cupertino_icons`. There is no real feature code yet —
 do not assume the demo UI is the intended product.
 
+## Codebase memory (codebase-memory-mcp)
+
+Project name in the graph: **`G-WS-media_info`** (reindex with `index_repository(repo_path: "G:/WS/media_info", mode: "full")`).
+
+- **Known false positive**: every Dart file that uses the Dart 3 unnamed `library;` directive is reported as `parse_partial` at exactly that line (e.g. `lib/src/core/spec.dart:5`, `lib/src/formats/{riff,flac,mp3}.dart`). The line carries no declarations, so **nothing is actually missing from the graph** — ignore these flags.
+- `check_index_coverage` reports `freshness: metadata_changed` right after any reindex; re-run it before trusting `status`.
+
+**Use the graph, not grep, for discovery.** It already caught things grep missed: two parallel dispatch entry points (`registry.parseFormat` vs. a format module's own copy) and a `FormatSpec.parser` that was never wired on one format.
+
 ## Toolchain (this machine)
 
 - Flutter `3.41.6` stable at `G:\SDK\flutter` (on `PATH`), Dart `3.11.4`.
