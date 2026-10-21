@@ -123,7 +123,12 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  /// 加一个标签页（不触发 rebuild）。
+  /// 加一个标签页（不触发 rebuild），并**在这里发起解析**。
+  ///
+  /// 解析放在外壳而不是标签页组件里：`IndexedStack` 的子节点被 Flutter 包在
+  /// **没有 key 的 `Visibility`** 里，只能按位置匹配——关掉一个标签，剩下的标签
+  /// 会被整体重建、由标签页组件自己重新解析一遍（界面闪回「解析中…」）。
+  /// 状态由外壳按路径缓存，就不会连带重来。
   void _addTab(String path, {required bool select}) {
     _paths.add(path);
     _states[path] = DocumentTabState(
@@ -131,6 +136,29 @@ class _AppShellState extends State<AppShell> {
       status: DocumentStatus.loading,
     );
     if (select) _selectedIndex = _paths.length - 1;
+
+    parseFileInIsolate(path).then(
+      (ParsedDocument document) {
+        if (!mounted) return;
+        setState(() {
+          _states[path] = DocumentTabState(
+            path: path,
+            status: DocumentStatus.ready,
+            document: document,
+          );
+        });
+      },
+      onError: (Object error) {
+        if (!mounted) return;
+        setState(() {
+          _states[path] = DocumentTabState(
+            path: path,
+            status: DocumentStatus.failed,
+            error: '解析失败：$error',
+          );
+        });
+      },
+    );
   }
 
   /// 打开一个文件（拖放 / 文件选择器）。
@@ -254,13 +282,6 @@ class _AppShellState extends State<AppShell> {
     final document = _currentDocument;
     if (handler == null || document == null) return;
     await handler(document);
-  }
-
-  void _onTabStateChanged(DocumentTabState state) {
-    if (!mounted) return;
-    setState(() {
-      _states[state.path] = state;
-    });
   }
 
   /// 决定一个标签页显示什么——**右栏的装配位置在这里**。
@@ -418,9 +439,8 @@ class _AppShellState extends State<AppShell> {
 
   /// 主体。
   Widget _buildBody() {
-    if (_paths.isEmpty) {
-      return _EmptyState(onOpen: _pickFiles);
-    }
+    // 空态**也要接拖放**——空态上写着"把媒体文件拖进来"，
+    // 接不住就是骗人。
     return DragTarget<Object>(
       onWillAcceptWithDetails: (DragTargetDetails<Object> details) =>
           _pathsOf(details.data).isNotEmpty,
@@ -435,6 +455,9 @@ class _AppShellState extends State<AppShell> {
             List<Object?> candidate,
             List<Object?> rejected,
           ) {
+            if (_paths.isEmpty) {
+              return _EmptyState(onOpen: _pickFiles);
+            }
             return IndexedStack(
               index: _selectedIndex,
               children: <Widget>[
@@ -442,8 +465,13 @@ class _AppShellState extends State<AppShell> {
                   DocumentTab(
                     key: ValueKey<String>(path),
                     path: path,
+                    state:
+                        _states[path] ??
+                        DocumentTabState(
+                          path: path,
+                          status: DocumentStatus.loading,
+                        ),
                     builder: _buildTabContent,
-                    onStateChanged: _onTabStateChanged,
                   ),
               ],
             );

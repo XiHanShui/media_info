@@ -2,6 +2,12 @@
 ///
 /// 每个标签页**独立**持有自己的解析状态（解析中 / 解析成功 / 解析失败），
 /// 关闭一个标签不影响其它标签。
+///
+/// 注意：解析本身在**外壳**（`app.dart`）里发起，状态也由外壳按路径缓存。
+/// 这样关闭一个标签页时，剩下标签页的解析结果不会被连带丢掉——
+/// 早先由本组件自己解析，`IndexedStack` 的子节点被 Flutter 包在**没有 key 的
+/// `Visibility`** 里，只能按位置匹配，关掉一个标签就会让剩下的标签整体重建、
+/// 重新解析一遍（界面上闪回「解析中…」）。
 library;
 
 import 'package:flutter/material.dart';
@@ -43,111 +49,38 @@ class DocumentTabState {
   final String? error;
 }
 
-/// 一个标签页：持有解析状态，并把结果回调给外壳。
+/// 一个标签页的视图：只负责把状态画出来。
 ///
-/// 外壳（`app.dart`）用 [onStateChanged] 拿到解析结果，
-/// 再用 [builder] 决定这一页显示什么——**右栏的装配在 app.dart 里**。
-class DocumentTab extends StatefulWidget {
+/// 解析在**外壳**里做（见 `app.dart`），这里不持有任何解析状态。
+class DocumentTab extends StatelessWidget {
   const DocumentTab({
     super.key,
     required this.path,
+    required this.state,
     required this.builder,
-    this.onStateChanged,
   });
 
   /// 本标签页对应的文件路径。
   final String path;
 
-  /// 由外壳决定这一页显示什么。
-  final Widget Function(BuildContext context, DocumentTabState state) builder;
-
-  /// 解析状态变化时回调（解析完成时触发一次）。
-  final ValueChanged<DocumentTabState>? onStateChanged;
-
-  @override
-  State<DocumentTab> createState() => _DocumentTabState();
-}
-
-class _DocumentTabState extends State<DocumentTab> {
-  late final Future<ParsedDocument> _future = _parse();
-
-  Future<ParsedDocument> _parse() {
-    final future = parseFileInIsolate(widget.path);
-    future.then(
-      (ParsedDocument document) {
-        _emit(
-          DocumentTabState(
-            path: widget.path,
-            status: DocumentStatus.ready,
-            document: document,
-          ),
-        );
-      },
-      onError: (Object error) {
-        _emit(
-          DocumentTabState(
-            path: widget.path,
-            status: DocumentStatus.failed,
-            error: '解析失败：$error',
-          ),
-        );
-      },
-    );
-    return future;
-  }
-
-  void _emit(DocumentTabState state) {
-    if (!mounted) return;
-    widget.onStateChanged?.call(state);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<ParsedDocument>(
-      future: _future,
-      builder: (BuildContext context, AsyncSnapshot<ParsedDocument> snapshot) {
-        final state = _stateOf(snapshot);
-        return widget.builder(context, state);
-      },
-    );
-  }
-
-  DocumentTabState _stateOf(AsyncSnapshot<ParsedDocument> snapshot) {
-    if (snapshot.connectionState != ConnectionState.done) {
-      return DocumentTabState(
-        path: widget.path,
-        status: DocumentStatus.loading,
-      );
-    }
-    if (snapshot.hasError) {
-      return DocumentTabState(
-        path: widget.path,
-        status: DocumentStatus.failed,
-        error: '解析失败：${snapshot.error}',
-      );
-    }
-    return DocumentTabState(
-      path: widget.path,
-      status: DocumentStatus.ready,
-      document: snapshot.data,
-    );
-  }
-}
-
-/// 一个标签页的默认视图：左栏语义字段 + 右栏（由外壳传入）。
-///
-/// [rightPane] 是右栏的插槽——结构树视图与 hex 面板由实现票 21 装进去。
-class DocumentTabBody extends StatelessWidget {
-  const DocumentTabBody({
-    super.key,
-    required this.state,
-    required this.rightPane,
-  });
-
-  /// 当前标签页的状态。
+  /// 当前的解析状态。
   final DocumentTabState state;
 
-  /// 右栏（结构树 + hex）的占位组件。
+  /// 由外壳决定这一页显示什么——**右栏的装配在 app.dart 里**。
+  final Widget Function(BuildContext context, DocumentTabState state) builder;
+
+  @override
+  Widget build(BuildContext context) => builder(context, state);
+}
+
+/// 一个标签页的主体：左边的字段视图 + 右边的装配区。
+class DocumentTabBody extends StatelessWidget {
+  const DocumentTabBody({super.key, required this.state, required this.rightPane});
+
+  /// 当前状态。
+  final DocumentTabState state;
+
+  /// 右栏（结构树 + hex + 播放器）。
   final Widget rightPane;
 
   @override
@@ -182,11 +115,11 @@ class DocumentTabBody extends StatelessWidget {
   }
 }
 
-/// 标签页里的整页消息（解析中 / 解析失败）。
+/// 一个居中的状态提示。
 class DocumentTabMessage extends StatelessWidget {
   const DocumentTabMessage(this.message, {super.key, this.icon});
 
-  /// 消息文案（中文）。
+  /// 提示文字。
   final String message;
 
   /// 可选的图标。
@@ -194,20 +127,18 @@ class DocumentTabMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (icon != null) ...<Widget>[
-            Icon(icon, size: 32, color: theme.colorScheme.onSurfaceVariant),
+            Icon(icon, size: 30, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 12),
           ],
           Text(
             message,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -364,7 +364,7 @@
                 "fields": [
                   {
                     "key": "CRC-32",
-                    "value": "hex:7013440D"
+                    "value": "hex:86B9B20A"
                   }
                 ],
                 "children": []
@@ -424,7 +424,7 @@
                 "fields": [
                   {
                     "key": "SegmentUUID",
-                    "value": "hex:2863E6EF575B9CE2B1B00F8F348C3F4A"
+                    "value": "hex:15DB178B37924E03E723D70978EEE354"
                   }
                 ],
                 "children": []
@@ -465,7 +465,7 @@
                 "fields": [
                   {
                     "key": "CRC-32",
-                    "value": "hex:28B243F4"
+                    "value": "hex:33E931C8"
                   }
                 ],
                 "children": []
@@ -504,7 +504,7 @@
                     "fields": [
                       {
                         "key": "TrackUID",
-                        "value": "hex:1B5D40CE8CAA5353"
+                        "value": "hex:8CC19F43E88EF61C"
                       }
                     ],
                     "children": []
@@ -762,7 +762,7 @@
                     "fields": [
                       {
                         "key": "TrackUID",
-                        "value": "hex:D438384713626E11"
+                        "value": "hex:83545D8C77A23C12"
                       }
                     ],
                     "children": []
@@ -981,7 +981,7 @@
                 "fields": [
                   {
                     "key": "CRC-32",
-                    "value": "hex:D367A5BD"
+                    "value": "hex:4B936991"
                   }
                 ],
                 "children": []
@@ -1066,7 +1066,7 @@
                         "fields": [
                           {
                             "key": "TagTrackUID",
-                            "value": "hex:1B5D40CE8CAA5353"
+                            "value": "hex:8CC19F43E88EF61C"
                           }
                         ],
                         "children": []
@@ -1165,7 +1165,7 @@
                         "fields": [
                           {
                             "key": "TagTrackUID",
-                            "value": "hex:D438384713626E11"
+                            "value": "hex:83545D8C77A23C12"
                           }
                         ],
                         "children": []

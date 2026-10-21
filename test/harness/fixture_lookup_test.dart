@@ -56,10 +56,10 @@ void main() {
   });
 
   group('素材定位', () {
-    test('目录里有 24 个素材，文件名都符合命名约定', () {
+    test('目录里有 26 个素材，文件名都符合命名约定', () {
       final names = listFixtureNames();
 
-      expect(names, hasLength(24));
+      expect(names, hasLength(26));
       expect(names, orderedEquals(List<String>.from(names)..sort()));
       for (final name in names) {
         final parsed = parseFixtureName(name);
