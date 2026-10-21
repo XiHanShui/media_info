@@ -117,13 +117,13 @@ void main() {
       );
       expect(
         _byKey(matroska.fileFields, 'container_format')!.value,
-        'Matroska',
+        'matroska',
       );
 
       final webm = parseFile(
         'test/fixtures/webm_vp8_vorbis_320x240.normal.webm',
       );
-      expect(_byKey(webm.fileFields, 'container_format')!.value, 'WebM');
+      expect(_byKey(webm.fileFields, 'container_format')!.value, 'webm');
     });
 
     test('容器格式：MP4 取 ftyp 的 major brand，其它格式取格式名', () {

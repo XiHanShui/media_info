@@ -404,8 +404,10 @@ MatroskaSemantics extractMatroskaSemantics(ContainerNode root) {
 }
 
 String _containerFormatName(String docType) => switch (docType.toLowerCase()) {
-  'webm' => 'WebM',
-  'matroska' => 'Matroska',
+  // 原样保留 DocType 的字面值（'matroska' / 'webm'）——这是文件里写的东西，
+  // 导出 JSON 时应该保真，不要在这里改大小写。
+  'webm' => 'webm',
+  'matroska' => 'matroska',
   _ => docType,
 };
 

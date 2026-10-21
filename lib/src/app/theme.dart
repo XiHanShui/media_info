@@ -55,6 +55,9 @@ class MediaColors {
 
   /// 推算值的颜色（我们自己算的，不是文件里写的）。
   static const Color violet = Color(0xFF9189C9);
+
+  /// 坐标色的半透明版本（文本选区背景）。
+  static const Color tealSoft = Color(0x335FA8A0);
 }
 
 /// 字体。
@@ -187,7 +190,7 @@ ThemeData buildMediaTheme() {
     iconTheme: const IconThemeData(color: MediaColors.chalkDim, size: 16),
     textSelectionTheme: const TextSelectionThemeData(
       cursorColor: MediaColors.amber,
-      selectionColor: Color(0x335FA8A0),
+      selectionColor: MediaColors.tealSoft,
     ),
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(

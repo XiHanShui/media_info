@@ -145,7 +145,7 @@ void main() {
 
       expect(find.text('没有标签'), findsNothing);
       expect(find.text('©too'), findsOneWidget);
-    }, skip: true);
+    });
   });
 
   group('结构树', () {

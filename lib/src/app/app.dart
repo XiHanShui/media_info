@@ -270,6 +270,7 @@ class _AppShellState extends State<AppShell> {
         root: document?.root,
         loader: parseStructureAtDepth,
         resetToken: _selectedIndex,
+        selectedNode: _selectedNode,
         onNodeSelected: (ContainerNode node) =>
             setState(() => _selectedNode = node),
       ),

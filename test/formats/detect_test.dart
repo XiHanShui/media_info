@@ -261,16 +261,18 @@ void main() {
     });
 
     test('Matroska 与 WebM 用 container_format 区分', () {
+      // container_format 的值是**原始 DocType**（'matroska' / 'webm'）——
+      // 文件里写的就是它，导出 JSON 时要保真。
       expect(
         _semanticValue('mkv_vp9_opus_320x240.normal.mkv', 'container_format'),
-        'Matroska',
+        'matroska',
       );
       expect(
         _semanticValue(
           'webm_vp8_vorbis_320x240.normal.webm',
           'container_format',
         ),
-        'WebM',
+        'webm',
       );
     });
   });

@@ -195,5 +195,5 @@ void main() {
 
     // 选了 `moov` 里的 `trak` → `moov` 那一段应该被高亮。
     expect(_fillOf(tester, _segment('moov')), isNot(MediaColors.tealDeep));
-  }, skip: true);
+  });
 }

@@ -251,7 +251,7 @@ void main() {
       final fields = extractMatroskaFields(result.root);
 
       expect(_value(fields, 'duration'), closeTo(1.0, 0.05));
-      expect(_value(fields, 'container_format'), 'Matroska');
+      expect(_value(fields, 'container_format'), 'matroska');
       expect(_value(fields, 'file_size'), source.length);
       expect(_value(fields, 'overall_bitrate'), closeTo(139896, 2000));
 
@@ -318,7 +318,7 @@ void main() {
       final result = parseContainer(matroskaFormat.container, source, depth: 6);
       final semantics = extractMatroskaSemantics(result.root);
 
-      expect(_value(semantics.fileFields, 'container_format'), 'WebM');
+      expect(_value(semantics.fileFields, 'container_format'), 'webm');
       expect(_value(semantics.fileFields, 'duration'), closeTo(1.003, 0.05));
       expect(_value(semantics.tracks[0].fields, 'codec'), 'V_VP8');
       expect(_value(semantics.tracks[0].fields, 'width'), 320);

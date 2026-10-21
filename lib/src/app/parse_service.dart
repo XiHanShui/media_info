@@ -142,7 +142,9 @@ ParsedDocument parseFile(String path, {int depth = defaultParseDepth}) {
         formatName: spec.name,
       ),
       tracks: _tracksOf(extracted),
-      tags: collectTags(result.root),
+      // 必须传 source：标签的载荷在字节里（MP4 的 data box、Vorbis comment、
+      // ID3 帧体），不传就只会得到空列表——是静默丢失，不是报错。
+      tags: collectTags(result.root, source: source),
       truncated: result.truncated,
       error: result.error,
       extensionWarning: checkExtension(path, spec.name),

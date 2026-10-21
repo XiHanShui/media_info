@@ -29,6 +29,7 @@ class StructurePane extends StatefulWidget {
     this.loader,
     this.resetToken = 0,
     this.onNodeSelected,
+    this.selectedNode,
   });
 
   /// 文件路径（惰性展开重新解析、hex 读字节都用它）。
@@ -49,13 +50,19 @@ class StructurePane extends StatefulWidget {
   /// 选中块时通知外部（应用层用它把胶片条的高亮与树保持同步）。
   final ValueChanged<ContainerNode>? onNodeSelected;
 
+  /// 外部指定的选中块（受控）。给了就用它——胶片条上点一段也能让树选中。
+  final ContainerNode? selectedNode;
+
   @override
   State<StructurePane> createState() => _StructurePaneState();
 }
 
 class _StructurePaneState extends State<StructurePane> {
-  /// 当前选中的块。
-  ContainerNode? _selected;
+  /// 本地选中的块（外部没给 selectedNode 时用）。
+  ContainerNode? _localSelected;
+
+  /// 生效的选中块：外部受控优先。
+  ContainerNode? get _selected => widget.selectedNode ?? _localSelected;
 
   /// hex 面板是否折叠。
   bool _hexCollapsed = false;
@@ -72,14 +79,14 @@ class _StructurePaneState extends State<StructurePane> {
     super.didUpdateWidget(oldWidget);
     if (widget.resetToken != oldWidget.resetToken) {
       setState(() {
-        _selected = null;
+        _localSelected = null;
         _hexCollapsed = false;
       });
     }
   }
 
   void _onNodeSelected(ContainerNode node) {
-    setState(() => _selected = node);
+    setState(() => _localSelected = node);
     widget.onNodeSelected?.call(node);
   }
 

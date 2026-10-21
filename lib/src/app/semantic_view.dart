@@ -299,11 +299,15 @@ class _HoverableState extends State<_Hoverable> {
 
   @override
   Widget build(BuildContext context) {
+    // 尊重系统的"减少动态效果"：开了就把过渡时长压到 0。
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 90),
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 90),
         color: _hovered ? MediaColors.panelHigh : Colors.transparent,
         child: widget.child,
       ),

@@ -384,31 +384,11 @@ class _TreeRowWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final mono = theme.textTheme.bodySmall?.copyWith(
-      fontFamilyFallback: const <String>[
-        'Consolas',
-        'Menlo',
-        'Courier New',
-        'monospace',
-      ],
+    final mono = MediaType.coordinate(MediaColors.chalk);
+    final typeStyle = mono.copyWith(
+      color: MediaColors.chalk,
+      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
     );
-    final typeStyle =
-        (selected
-                ? theme.textTheme.bodySmall?.copyWith(
-                    fontFamilyFallback: const <String>[
-                      'Consolas',
-                      'Menlo',
-                      'Courier New',
-                      'monospace',
-                    ],
-                    fontWeight: FontWeight.w600,
-                  )
-                : mono)
-            ?.copyWith(
-              color: MediaColors.chalk,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            );
 
     return InkWell(
       key: ValueKey<String>('structure-row-${_rowKey(row.key)}'),
@@ -559,7 +539,7 @@ class _ProportionBar extends StatelessWidget {
                 height: 6,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: MediaColors.amber.withValues(alpha: 0.55),
+                    color: MediaColors.teal.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),

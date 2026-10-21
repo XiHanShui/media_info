@@ -37,12 +37,17 @@ class FileStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final root = this.root;
-    final children = root?.children ?? const <ContainerNode>[];
+    final rootNode = root;
+    if (rootNode == null) return const SizedBox(height: height);
+
+    // 顶层若被一个几乎占满整个文件的容器包着（Matroska 的 `Segment` 就是），
+    // 就下钻一层——否则载荷（Cluster）藏在里面，条子全是元数据色，看不出数据比例。
+    final children = _stripChildren(rootNode);
     if (children.isEmpty) {
       return const SizedBox(height: height);
     }
 
-    final total = root!.size <= 0 ? 1 : root.size;
+    final total = rootNode.size <= 0 ? 1 : rootNode.size;
 
     return SizedBox(
       height: height,
@@ -51,6 +56,9 @@ class FileStrip extends StatelessWidget {
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
             final width = constraints.maxWidth;
+            // 选中块的祖先链（含它自己）：选中嵌套在 moov 里的块时，
+            // 所在的**顶层段**也要高亮。一次性算出来，不要每段重算。
+            final chain = _ancestorChain(rootNode, selected);
             // 按累计偏移排布：每一段的位置就是它在文件里的真实位置。
             var cursor = 0;
             final segments = <Widget>[];
@@ -63,7 +71,7 @@ class FileStrip extends StatelessWidget {
                   left: left,
                   total: total,
                   width: width,
-                  isSelected: _isSameOrAncestor(child, selected),
+                  isSelected: chain.any((ContainerNode a) => _sameBlock(a, child)),
                   onTap: onSelect,
                 ),
               );
@@ -75,35 +83,54 @@ class FileStrip extends StatelessWidget {
     );
   }
 
-  /// 选中的节点是不是这一段本身，或它的后代。
-  static bool _isSameOrAncestor(ContainerNode node, ContainerNode? selected) {
-    if (selected == null) return false;
-    var current = selected;
-    while (true) {
-      if (identical(current, node) || current.offset == node.offset) return true;
-      final parent = _parentOf(current);
-      if (parent == null) return false;
-      current = parent;
-    }
-  }
-
-  /// 从根往下找父节点（层级不深，线性找足够）。
-  static ContainerNode? _parentOf(ContainerNode target) {
-    ContainerNode? found;
-    void walk(ContainerNode node) {
-      if (found != null) return;
-      for (final child in node.children) {
-        if (identical(child, target) || child.offset == target.offset) {
-          found = node;
-          return;
-        }
-        walk(child);
+  /// 条子上要画哪一层。
+  ///
+  /// 默认是顶层块；但如果某个顶层块占了文件 90% 以上并且是容器，
+  /// 就改画它的子块——让"载荷 vs 元数据"的比例真的看得见。
+  static List<ContainerNode> _stripChildren(ContainerNode root) {
+    final top = root.children;
+    if (top.length < 2) return top;
+    for (final child in top) {
+      final dominates = root.size > 0 && child.size / root.size >= 0.9;
+      if (dominates && child.children.isNotEmpty) {
+        return <ContainerNode>[...top.where((ContainerNode c) => !identical(c, child)), ...child.children];
       }
     }
-
-    walk(target);
-    return found;
+    return top;
   }
+
+  /// 算出 [target] 的祖先链（从根到 target 自己，含 target）。
+  ///
+  /// 找不到就返回空列表。链只算一次，避免每段各找一遍。
+  static List<ContainerNode> _ancestorChain(
+    ContainerNode root,
+    ContainerNode? target,
+  ) {
+    if (target == null) return const <ContainerNode>[];
+    final chain = <ContainerNode>[];
+    bool walk(ContainerNode node) {
+      if (_sameBlock(node, target)) {
+        chain.add(node);
+        return true;
+      }
+      for (final child in node.children) {
+        if (walk(child)) {
+          chain.insert(0, node);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    walk(root);
+    return chain;
+  }
+
+  /// 同一个块？用 偏移+长度+类型 三元组判断——重新解析过的树里节点实例不同，
+  /// 只能按内容比对。
+  static bool _sameBlock(ContainerNode a, ContainerNode b) =>
+      a.offset == b.offset && a.size == b.size && a.type == b.type;
+
 }
 
 /// 一段（一个顶层块）。
