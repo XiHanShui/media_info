@@ -15,14 +15,15 @@
 /// └───────────────────┴──────────────────────────┘
 /// ```
 ///
-/// **右栏的装配位置**是 [StructurePanePlaceholder]——实现票 21 把结构树视图与
-/// hex 面板装进去（替换 [_buildTabContent] 里的那一处）。
+/// **右栏的装配位置**是 [StructurePane]（实现票 21 的结构树视图 + hex 面板）——
+/// 装在 [_buildTabContent] 里。
 library;
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../ui/structure_pane.dart';
 import 'document_tab.dart';
 import 'parse_service.dart';
 
@@ -233,7 +234,12 @@ class _AppShellState extends State<AppShell> {
     }
     return DocumentTabBody(
       state: state,
-      rightPane: const StructurePanePlaceholder(),
+      rightPane: StructurePane(
+        filePath: state.path,
+        root: document?.root,
+        loader: parseStructureAtDepth,
+        resetToken: _selectedIndex,
+      ),
     );
   }
 
@@ -353,27 +359,6 @@ class _AppShellState extends State<AppShell> {
               ],
             );
           },
-    );
-  }
-}
-
-/// 右栏插槽：结构树视图 + 下方的 hex 面板。
-///
-/// **实现票 21 会替换掉这个占位组件**——把 `lib/src/ui/` 里的结构树视图与
-/// hex 视图装进来，装配位置在 `app.dart` 的 `_buildTabContent`。
-class StructurePanePlaceholder extends StatelessWidget {
-  const StructurePanePlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Text(
-        '结构树视图与 hex 面板（实现票 21）',
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
     );
   }
 }
