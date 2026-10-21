@@ -13,10 +13,20 @@ library;
 import 'package:flutter/material.dart';
 
 import 'src/app/app.dart';
+import 'src/app/export.dart';
+import 'src/app/parse_service.dart';
 import 'src/formats/all_formats.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   registerAllFormats();
-  runApp(const MediaInfoApp());
+  // SnackBar 的载体：导出完成后用它提示「已导出到 …」。
+  final messengerKey = GlobalKey<ScaffoldMessengerState>();
+  runApp(
+    MediaInfoApp(
+      scaffoldMessengerKey: messengerKey,
+      onExportJson: (ParsedDocument document) =>
+          exportDocumentToJson(document, messenger: messengerKey.currentState),
+    ),
+  );
 }

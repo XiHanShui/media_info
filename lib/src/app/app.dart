@@ -38,6 +38,7 @@ class MediaInfoApp extends StatelessWidget {
     super.key,
     this.onExportJson,
     this.initialPaths = const <String>[],
+    this.scaffoldMessengerKey,
   });
 
   /// 导出 JSON 的处理器（可为空 = 还没接上导出功能）。
@@ -49,12 +50,19 @@ class MediaInfoApp extends StatelessWidget {
   /// 集成用的等价入口（文件选择对话框是系统窗口，测不了）。
   final List<String> initialPaths;
 
+  /// SnackBar 的载体。
+  ///
+  /// 调用方（例如 `main.dart` 里的导出处理器）拿它来提示「已导出到 …」——
+  /// 导出是个没有返回值的事件，不给用户反馈的话没法确认成没成。
+  final GlobalKey<ScaffoldMessengerState>? scaffoldMessengerKey;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'media_info',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
+      scaffoldMessengerKey: scaffoldMessengerKey,
       home: AppShell(onExportJson: onExportJson, initialPaths: initialPaths),
     );
   }
