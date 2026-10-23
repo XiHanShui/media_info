@@ -31,6 +31,7 @@ class StructurePane extends StatefulWidget {
     this.onNodeSelected,
     this.selectedNode,
     this.playheadOffset,
+    this.playheadNotifier,
     this.highlight,
     this.highlightLabel,
   });
@@ -58,6 +59,9 @@ class StructurePane extends StatefulWidget {
 
   /// 播放头当前所在的字节偏移（树里用播放头记号标出）。
   final int? playheadOffset;
+
+  /// 播放头偏移的监听器——结构树用它来只重绘播放头标记。
+  final ValueNotifier<int?>? playheadNotifier;
 
   /// 要在 hex 面板里高亮的字节范围（语义字段选中时用）。
   final ByteRange? highlight;
@@ -117,6 +121,7 @@ class _StructurePaneState extends State<StructurePane> {
             selectedNode: selected,
             onNodeSelected: _onNodeSelected,
             playheadOffset: widget.playheadOffset,
+            playheadNotifier: widget.playheadNotifier,
             resetToken: widget.resetToken,
           ),
         ),

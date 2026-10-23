@@ -173,7 +173,7 @@ class _AppShellState extends State<AppShell> {
       _addTab(path, select: true);
       // 打开文件时自动展开播放器条——用户不必再找「播放」按钮。
       _showPlayer = true;
-      _playheadOffset = null;
+      _playheadNotifier.value = null;
     });
   }
 
@@ -195,7 +195,7 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       _selectedIndex = (_selectedIndex + 1) % _paths.length;
       _selectedNode = null;
-      _playheadOffset = null;
+      _playheadNotifier.value = null;
     });
   }
 
@@ -228,8 +228,9 @@ class _AppShellState extends State<AppShell> {
   /// 播放器面板是否展开。
   bool _showPlayer = false;
 
-  /// 播放头当前所在的字节偏移（用来在结构树里高亮当前块）。
-  int? _playheadOffset;
+  /// 播放头当前所在的字节偏移——用 ValueNotifier 是为了**只重绘播放头标记**，
+  /// 而不是每次播放位置更新都重建整棵结构树（卡顿的根因）。
+  final ValueNotifier<int?> _playheadNotifier = ValueNotifier<int?>(null);
 
   /// 左栏当前选中的语义字段——它的字节范围会在右边的 hex 面板里高亮。
   SemanticField? _selectedField;
@@ -311,7 +312,8 @@ class _AppShellState extends State<AppShell> {
         loader: parseStructureAtDepth,
         resetToken: _selectedIndex,
         selectedNode: _selectedNode,
-        playheadOffset: _playheadOffset,
+        playheadOffset: _playheadNotifier.value,
+        playheadNotifier: _playheadNotifier,
         highlight: _selectedField?.byteRange,
         highlightLabel: _selectedField == null
             ? null
@@ -409,7 +411,7 @@ class _AppShellState extends State<AppShell> {
                 ? null
                 : () => setState(() {
                       _showPlayer = !_showPlayer;
-                      _playheadOffset = null;
+                      _playheadNotifier.value = null;
                     }),
           ),
           const Spacer(),
@@ -435,7 +437,7 @@ class _AppShellState extends State<AppShell> {
         positionIndex: positionIndexOf(document),
         selectedOffset: _selectedNode?.offset,
         hasVideo: hasVideo,
-        onPositionOffset: (int? offset) => setState(() => _playheadOffset = offset),
+        onPositionOffset: (int? offset) => _playheadNotifier.value = offset,
       ),
     );
   }

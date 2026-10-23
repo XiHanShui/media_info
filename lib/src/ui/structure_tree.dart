@@ -66,6 +66,7 @@ class StructureTree extends StatefulWidget {
     this.selectedNode,
     this.onNodeSelected,
     this.playheadOffset,
+    this.playheadNotifier,
     this.resetToken = 0,
   });
 
@@ -86,6 +87,8 @@ class StructureTree extends StatefulWidget {
 
   /// 播放头当前所在的字节偏移——落在哪个块里就在那一行标一个播放头记号。
   final int? playheadOffset;
+
+  final ValueNotifier<int?>? playheadNotifier;
 
   /// 选中一个块时的回调（hex 面板靠它更新）。
   final ValueChanged<ContainerNode>? onNodeSelected;
@@ -289,7 +292,8 @@ class _StructureTreeState extends State<StructureTree> {
                 busy: _busy.contains(row.key),
                 lazy: _leaf.contains(row.key),
                 selected: _isSelected(row.node),
-                playhead: _containsPlayhead(row.node),
+                playheadNotifier: widget.playheadNotifier,
+                node: row.node,
                 onToggle: () => _onToggle(row),
                 onSelect: () => widget.onNodeSelected?.call(row.node),
               );
@@ -309,12 +313,7 @@ class _StructureTreeState extends State<StructureTree> {
         selected.type == node.type;
   }
 
-  /// 播放头是不是落在这一行里。
-  bool _containsPlayhead(ContainerNode node) {
-    final offset = widget.playheadOffset;
-    if (offset == null) return false;
-    return offset >= node.offset && offset < node.offset + node.size;
-  }
+  // _containsPlayhead 已内联到 ValueListenableBuilder 里，不再需要。
 }
 
 /// 一行（一个块）在树里的信息。
@@ -381,7 +380,8 @@ class _TreeRowWidget extends StatelessWidget {
     required this.busy,
     required this.lazy,
     required this.selected,
-    required this.playhead,
+    required this.playheadNotifier,
+    required this.node,
     required this.onToggle,
     required this.onSelect,
   });
@@ -392,7 +392,8 @@ class _TreeRowWidget extends StatelessWidget {
   final bool busy;
   final bool lazy;
   final bool selected;
-  final bool playhead;
+  final ValueNotifier<int?>? playheadNotifier;
+  final ContainerNode node;
   final VoidCallback onToggle;
   final VoidCallback onSelect;
 
@@ -422,14 +423,23 @@ class _TreeRowWidget extends StatelessWidget {
           children: <Widget>[
             SizedBox(width: row.depth * 14.0),
             SizedBox(width: 18, height: 18, child: _toggleButton(context)),
-            if (playhead)
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Icon(
-                  Icons.play_arrow,
-                  size: 11,
-                  color: MediaColors.amber,
-                ),
+            if (playheadNotifier != null)
+              ValueListenableBuilder<int?>(
+                valueListenable: playheadNotifier!,
+                builder: (BuildContext context, int? offset, Widget? child) {
+                  final isPlayhead = offset != null &&
+                      offset >= node.offset &&
+                      offset < node.offset + node.size;
+                  if (!isPlayhead) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      Icons.play_arrow,
+                      size: 11,
+                      color: MediaColors.amber,
+                    ),
+                  );
+                },
               ),
             Expanded(
               child: Text(
