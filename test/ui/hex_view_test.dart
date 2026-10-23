@@ -68,8 +68,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('66 74 79 70'), findsOneWidget);
-    expect(find.textContaining('|ftyp|'), findsOneWidget);
+    expect(find.textContaining('66 74 79 70', findRichText: true), findsOneWidget);
+    expect(find.textContaining('|ftyp|', findRichText: true), findsOneWidget);
   });
 
   testWidgets('大块只显示前 N 字节并说明还剩多少', (WidgetTester tester) async {
@@ -101,7 +101,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.textContaining('截断'), findsOneWidget);
     // 只读得到 8 个字节。
-    expect(find.textContaining('41 41 41 41'), findsOneWidget);
+    expect(find.textContaining('41 41 41 41', findRichText: true), findsOneWidget);
   });
 
   testWidgets('文件打不开时给出中文提示', (WidgetTester tester) async {

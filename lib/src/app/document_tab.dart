@@ -12,6 +12,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../core/node.dart';
 import 'parse_service.dart';
 import 'semantic_view.dart';
 
@@ -75,13 +76,25 @@ class DocumentTab extends StatelessWidget {
 
 /// 一个标签页的主体：左边的字段视图 + 右边的装配区。
 class DocumentTabBody extends StatelessWidget {
-  const DocumentTabBody({super.key, required this.state, required this.rightPane});
+  const DocumentTabBody({
+    super.key,
+    required this.state,
+    required this.rightPane,
+    this.selectedField,
+    this.onFieldSelected,
+  });
 
   /// 当前状态。
   final DocumentTabState state;
 
   /// 右栏（结构树 + hex + 播放器）。
   final Widget rightPane;
+
+  /// 左栏当前选中的字段（用来点亮它的字节范围标签）。
+  final SemanticField? selectedField;
+
+  /// 左栏选中字段时的回调。
+  final ValueChanged<SemanticField?>? onFieldSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +119,13 @@ class DocumentTabBody extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Expanded(child: SemanticView(document: document)),
+            Expanded(
+              child: SemanticView(
+                document: document,
+                selectedField: selectedField,
+                onFieldSelected: onFieldSelected,
+              ),
+            ),
             const VerticalDivider(width: 1),
             Expanded(flex: 2, child: rightPane),
           ],

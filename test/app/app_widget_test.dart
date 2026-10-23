@@ -61,7 +61,10 @@ Finder _treeRow(String type) =>
 
 /// hex 面板里的一个文本。
 Finder _hexText(String text) =>
-    find.descendant(of: find.byType(HexView), matching: find.text(text));
+    find.descendant(
+      of: find.byType(HexView),
+      matching: find.text(text, findRichText: true),
+    );
 
 /// 造一个临时文件，返回路径。
 String _tempFile(String name, List<int> bytes) {
@@ -188,7 +191,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(HexView),
-          matching: find.textContaining(expected),
+          matching: find.textContaining(expected, findRichText: true),
         ),
         findsOneWidget,
         reason: 'hex 面板显示的应该是文件偏移 0 处的 16 个字节',

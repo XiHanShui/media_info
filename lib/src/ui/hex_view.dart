@@ -32,32 +32,124 @@ List<String> hexDumpLines(
   required int baseOffset,
   int bytesPerLine = kHexBytesPerLine,
 }) {
-  final lines = <String>[];
-  if (bytesPerLine <= 0) return lines;
+  return hexDumpRows(
+    bytes,
+    baseOffset: baseOffset,
+    bytesPerLine: bytesPerLine,
+  ).map((HexRow row) => row.text).toList(growable: false);
+}
+
+/// 一行 hex（最多 [kHexBytesPerLine] 个字节）的结构化表示。
+///
+/// 拆成结构是为了能**逐字节**地高亮——语义字段选中了某个值，
+/// 要能指出它占的是哪几个字节。
+class HexRow {
+  const HexRow({
+    required this.offset,
+    required this.bytes,
+    required this.ascii,
+  });
+
+  /// 这一行第一个字节在文件里的偏移。
+  final int offset;
+
+  /// 这一行的字节（最后一行可能不足一整行）。
+  final List<int> bytes;
+
+  /// 这一行的 ASCII 形式（不可打印字符显示为 `.`）。
+  final String ascii;
+
+  /// 纯文本形式，与 [hexDumpLines] 的输出逐字一致。
+  String get text {
+    final hex = <String>[];
+    for (final byte in bytes) {
+      hex.add(byte.toRadixString(16).toUpperCase().padLeft(2, '0'));
+    }
+    while (hex.length < kHexBytesPerLine) {
+      hex.add('  ');
+    }
+    return '${offset.toRadixString(16).toUpperCase().padLeft(8, '0')}'
+        '  ${hex.join(' ')}  |$ascii|';
+  }
+}
+
+/// 把字节切成一行的行，每行最多 [bytesPerLine] 个字节。
+List<HexRow> hexDumpRows(
+  Uint8List bytes, {
+  required int baseOffset,
+  int bytesPerLine = kHexBytesPerLine,
+}) {
+  final rows = <HexRow>[];
+  if (bytesPerLine <= 0) return rows;
   for (var start = 0; start < bytes.length; start += bytesPerLine) {
     final end = start + bytesPerLine;
     final chunk = end > bytes.length ? bytes.length : end;
-    final hex = <String>[];
+    final rowBytes = <int>[];
     final ascii = StringBuffer();
     for (var index = start; index < chunk; index++) {
       final byte = bytes[index];
-      hex.add(byte.toRadixString(16).toUpperCase().padLeft(2, '0'));
+      rowBytes.add(byte);
       ascii.write(_isPrintable(byte) ? String.fromCharCode(byte) : '.');
     }
-    // 不足一行时补空格，让 ASCII 列对齐。
-    while (hex.length < bytesPerLine) {
-      hex.add('  ');
-    }
-    lines.add(
-      '${(baseOffset + start).toRadixString(16).toUpperCase().padLeft(8, '0')}'
-      '  ${hex.join(' ')}  |${ascii.toString()}|',
+    rows.add(
+      HexRow(
+        offset: baseOffset + start,
+        bytes: rowBytes,
+        ascii: ascii.toString(),
+      ),
     );
   }
-  return lines;
+  return rows;
 }
 
 /// 是不是可以直接显示的 ASCII 字符。
 bool _isPrintable(int byte) => byte >= 0x20 && byte <= 0x7e;
+
+/// 把一行 hex 渲染成富文本，命中 [highlight] 的字节高亮。
+///
+/// 列宽与 [hexDumpLines] 完全一致：地址 8 位 + 两空格 + 十六进制 47 列 +
+/// 两空格 + ASCII 16 列。命中的字节用琥珀色底标出。
+List<InlineSpan> hexRowSpans(
+  HexRow row, {
+  ByteRange? highlight,
+  TextStyle? base,
+  TextStyle? hit,
+}) {
+  final spans = <InlineSpan>[];
+
+  spans.add(
+    TextSpan(
+      text: '${row.offset.toRadixString(16).toUpperCase().padLeft(8, '0')}  ',
+      style: base,
+    ),
+  );
+
+  for (var i = 0; i < kHexBytesPerLine; i++) {
+    if (i > 0) spans.add(TextSpan(text: ' ', style: base));
+    if (i < row.bytes.length) {
+      final byte = row.bytes[i];
+      final isHit = highlight != null && highlight.contains(row.offset + i);
+      spans.add(
+        TextSpan(
+          text: byte.toRadixString(16).toUpperCase().padLeft(2, '0'),
+          style: isHit ? hit : base,
+        ),
+      );
+    } else {
+      // 不足一行时补空格，让 ASCII 列对齐。
+      spans.add(TextSpan(text: '  ', style: base));
+    }
+  }
+
+  spans.add(TextSpan(text: '  |', style: base));
+  for (var i = 0; i < row.ascii.length; i++) {
+    final isHit = highlight != null && highlight.contains(row.offset + i);
+    spans.add(TextSpan(text: row.ascii[i], style: isHit ? hit : base));
+  }
+  spans.add(TextSpan(text: '|', style: base));
+
+  return spans;
+}
 
 /// hex 视图：显示选中块的内容。
 class HexView extends StatefulWidget {
@@ -68,6 +160,8 @@ class HexView extends StatefulWidget {
     this.byteLimit = kDefaultHexByteLimit,
     this.collapsed = false,
     this.onCollapsedChanged,
+    this.highlight,
+    this.highlightLabel,
   });
 
   /// 选中的块；`null` = 没有选中任何块（面板应该整个收起来）。
@@ -87,6 +181,14 @@ class HexView extends StatefulWidget {
 
   /// 折叠状态变化时的回调。
   final ValueChanged<bool>? onCollapsedChanged;
+
+  /// 要高亮的字节范围（语义字段选中时用）。
+  ///
+  /// 命中的字节用琥珀色底标出——这样就能把 hex 与字段值对应起来。
+  final ByteRange? highlight;
+
+  /// 高亮范围对应的字段名（显示在提示行里）。
+  final String? highlightLabel;
 
   @override
   State<HexView> createState() => _HexViewState();
@@ -213,10 +315,14 @@ class _HexViewState extends State<HexView> {
     if (node == null) {
       return const SizedBox.shrink();
     }
-    final lines = hexDumpLines(_bytes, baseOffset: _baseOffset);
+    final rows = hexDumpRows(_bytes, baseOffset: _baseOffset);
     final mono = MediaType.coordinate(
       MediaColors.chalk,
     ).copyWith(fontSize: 12, height: 1.35);
+    final hit = mono.copyWith(
+      color: MediaColors.ink,
+      backgroundColor: MediaColors.amber,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -245,6 +351,17 @@ class _HexViewState extends State<HexView> {
                 style: MediaType.note(MediaColors.chalkFaint),
               ),
             ),
+          if (widget.highlight != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 4, 10, 0),
+              child: Text(
+                '高亮：${widget.highlightLabel ?? '所选字段'}'
+                ' · 偏移 0x${widget.highlight!.start.toRadixString(16).toUpperCase()}'
+                '–0x${(widget.highlight!.end - 1).toRadixString(16).toUpperCase()}'
+                '（${widget.highlight!.length} 字节）',
+                style: MediaType.note(MediaColors.amber),
+              ),
+            ),
           Expanded(
             child: Container(
               color: MediaColors.ink,
@@ -253,14 +370,23 @@ class _HexViewState extends State<HexView> {
                 child: SizedBox(
                   width: 760,
                   child: ListView.builder(
-                    itemCount: lines.length,
+                    itemCount: rows.length,
                     itemExtent: 18,
                     itemBuilder: (BuildContext context, int index) => Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 1,
                       ),
-                      child: Text(lines[index], style: mono),
+                      child: RichText(
+                        text: TextSpan(
+                          children: hexRowSpans(
+                            rows[index],
+                            highlight: widget.highlight,
+                            base: mono,
+                            hit: hit,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),

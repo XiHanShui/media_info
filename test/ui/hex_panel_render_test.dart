@@ -209,7 +209,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 4096 字节 = 256 行；整块读进来会是 6250 行。
-      expect(find.textContaining('41 41 41 41'), findsWidgets);
+      expect(find.textContaining('41 41 41 41', findRichText: true), findsWidgets);
       expect(
         tester.widgetList<Text>(find.byType(Text)).length,
         lessThan(400),
@@ -268,7 +268,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.textContaining('41 41 41 41'), findsOneWidget);
+      expect(find.textContaining('41 41 41 41', findRichText: true), findsOneWidget);
       expect(find.textContaining('截断'), findsOneWidget);
     });
 
@@ -320,7 +320,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('mdat'), findsOneWidget);
-      expect(find.textContaining('41 41 41 41'), findsNothing);
+      expect(find.textContaining('41 41 41 41', findRichText: true), findsNothing);
     });
 
     testWidgets('展开按钮的提示随折叠状态变化', (WidgetTester tester) async {

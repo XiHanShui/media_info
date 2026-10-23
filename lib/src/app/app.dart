@@ -228,6 +228,9 @@ class _AppShellState extends State<AppShell> {
   /// 播放头当前所在的字节偏移（用来在结构树里高亮当前块）。
   int? _playheadOffset;
 
+  /// 左栏当前选中的语义字段——它的字节范围会在右边的 hex 面板里高亮。
+  SemanticField? _selectedField;
+
   /// 胶片条：顶层块按比例排开。
   Widget _buildFileStrip() {
     final document = _currentDocument;
@@ -296,6 +299,9 @@ class _AppShellState extends State<AppShell> {
     }
     return DocumentTabBody(
       state: state,
+      selectedField: _selectedField,
+      onFieldSelected: (SemanticField? field) =>
+          setState(() => _selectedField = field),
       rightPane: StructurePane(
         filePath: state.path,
         root: document?.root,
@@ -303,6 +309,10 @@ class _AppShellState extends State<AppShell> {
         resetToken: _selectedIndex,
         selectedNode: _selectedNode,
         playheadOffset: _playheadOffset,
+        highlight: _selectedField?.byteRange,
+        highlightLabel: _selectedField == null
+            ? null
+            : '${_selectedField!.label}（${_selectedField!.key}）',
         onNodeSelected: (ContainerNode node) =>
             setState(() => _selectedNode = node),
       ),

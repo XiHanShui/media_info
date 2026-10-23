@@ -31,6 +31,8 @@ class StructurePane extends StatefulWidget {
     this.onNodeSelected,
     this.selectedNode,
     this.playheadOffset,
+    this.highlight,
+    this.highlightLabel,
   });
 
   /// 文件路径（惰性展开重新解析、hex 读字节都用它）。
@@ -56,6 +58,12 @@ class StructurePane extends StatefulWidget {
 
   /// 播放头当前所在的字节偏移（树里用播放头记号标出）。
   final int? playheadOffset;
+
+  /// 要在 hex 面板里高亮的字节范围（语义字段选中时用）。
+  final ByteRange? highlight;
+
+  /// 高亮范围对应的字段名（显示在 hex 面板的提示行里）。
+  final String? highlightLabel;
 
   @override
   State<StructurePane> createState() => _StructurePaneState();
@@ -120,6 +128,8 @@ class _StructurePaneState extends State<StructurePane> {
               node: selected,
               filePath: widget.filePath,
               collapsed: _hexCollapsed,
+              highlight: widget.highlight,
+              highlightLabel: widget.highlightLabel,
               onCollapsedChanged: (bool value) =>
                   setState(() => _hexCollapsed = value),
             ),

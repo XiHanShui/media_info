@@ -38,10 +38,31 @@ const int _kTruncateThreshold = 28;
 
 /// 左栏：语义字段视图。
 class SemanticView extends StatelessWidget {
-  const SemanticView({super.key, required this.document});
+  const SemanticView({
+    super.key,
+    required this.document,
+    this.onFieldSelected,
+    this.selectedField,
+  });
 
   /// 已解析的文件。
   final ParsedDocument document;
+
+  /// 选中一个字段时回调（用来在 hex 面板里高亮它占的字节）。
+  final ValueChanged<SemanticField?>? onFieldSelected;
+
+  /// 当前选中的字段（它那行的字节范围标签会点亮）。
+  final SemanticField? selectedField;
+
+  /// 是不是当前选中的那个字段。
+  bool _isSelected(SemanticField field) {
+    final selected = selectedField;
+    if (selected == null) return false;
+    return identical(selected, field) ||
+        (selected.key == field.key &&
+            selected.trackIndex == field.trackIndex &&
+            selected.value == field.value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +73,12 @@ class SemanticView extends StatelessWidget {
         if (document.fileFields.isEmpty)
           const _EmptyHint('没有文件级字段')
         else
-          for (final field in document.fileFields) _FieldRow(field: field),
+          for (final field in document.fileFields)
+            _FieldRow(
+              field: field,
+              selected: _isSelected(field),
+              onSelected: onFieldSelected,
+            ),
         const _Rule(),
         const _SectionEyebrow('轨道级'),
         if (document.tracks.isEmpty)
@@ -60,7 +86,12 @@ class SemanticView extends StatelessWidget {
         else
           for (final track in document.tracks) ...<Widget>[
             _TrackHeader(trackIndex: track.trackIndex),
-            for (final field in track.fields) _FieldRow(field: field),
+            for (final field in track.fields)
+              _FieldRow(
+                field: field,
+                selected: _isSelected(field),
+                onSelected: onFieldSelected,
+              ),
           ],
         const _Rule(),
         const _SectionEyebrow('标签'),
@@ -123,12 +154,11 @@ class _TrackHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
         children: <Widget>[
-          Text(
-            '轨道 $trackIndex',
-            style: MediaType.eyebrow(MediaColors.teal),
-          ),
+          Text('轨道 $trackIndex', style: MediaType.eyebrow(MediaColors.teal)),
           const SizedBox(width: 10),
-          const Expanded(child: Divider(height: 1, color: MediaColors.edgeSoft)),
+          const Expanded(
+            child: Divider(height: 1, color: MediaColors.edgeSoft),
+          ),
         ],
       ),
     );
@@ -137,9 +167,19 @@ class _TrackHeader extends StatelessWidget {
 
 /// 一个语义字段行。
 class _FieldRow extends StatelessWidget {
-  const _FieldRow({required this.field});
+  const _FieldRow({
+    required this.field,
+    required this.selected,
+    required this.onSelected,
+  });
 
   final SemanticField field;
+
+  /// 这个字段是不是当前选中的。
+  final bool selected;
+
+  /// 点这一行时回调。
+  final ValueChanged<SemanticField?>? onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -149,77 +189,131 @@ class _FieldRow extends StatelessWidget {
     return _CopyableRow(
       value: formatCopiedFieldValue(field),
       child: _Hoverable(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              // 左：中文显示名 + 英文技术名（暗色等宽小字）
-              Flexible(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        field.label,
-                        style: MediaType.label(MediaColors.chalk),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                    const SizedBox(width: 7),
-                    Flexible(
-                      child: Text(
-                        field.key,
-                        style: MediaType.note(MediaColors.chalkFaint),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                    if (derived) ...<Widget>[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onSelected?.call(field),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // 左：中文显示名 + 英文技术名（暗色等宽小字）
+                Flexible(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          field.label,
+                          style: MediaType.label(MediaColors.chalk),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
-                        decoration: BoxDecoration(
-                          color: MediaColors.violet.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(2),
-                          border: Border.all(
-                            color: MediaColors.violet.withValues(alpha: 0.45),
-                            width: 1,
+                      ),
+                      const SizedBox(width: 7),
+                      Flexible(
+                        child: Text(
+                          field.key,
+                          style: MediaType.note(MediaColors.chalkFaint),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                      if (derived) ...<Widget>[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: MediaColors.violet.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(2),
+                            border: Border.all(
+                              color: MediaColors.violet.withValues(alpha: 0.45),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            kDerivedSuffix,
+                            style: MediaType.note(MediaColors.violet),
                           ),
                         ),
-                        child: Text(
-                          kDerivedSuffix,
-                          style: MediaType.note(MediaColors.violet),
+                      ],
+                      if (field.byteRange != null) ...<Widget>[
+                        const SizedBox(width: 7),
+                        Flexible(
+                          child: ClipRect(
+                            child: _ByteRangeChip(
+                              range: field.byteRange!,
+                              selected: selected,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 14),
-              // 右：值（等宽、靠右）
-              Flexible(
-                child: _ValueText(
-                  text: text,
-                  align: TextAlign.right,
-                ),
-              ),
-              if (field.unit != null && field.unit!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Text(
-                    field.unit!,
-                    style: MediaType.note(MediaColors.chalkFaint),
                   ),
                 ),
-            ],
+                const SizedBox(width: 14),
+                // 右：值（等宽、靠右）
+                Flexible(
+                  child: _ValueText(text: text, align: TextAlign.right),
+                ),
+                if (field.unit != null && field.unit!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      field.unit!,
+                      style: MediaType.note(MediaColors.chalkFaint),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 字段的字节范围标签：`0x2C–0x2F`。
+///
+/// 点这一行就能在右边的 hex 面板里高亮出这几个字节——
+/// 把 hex 与字段值对起来（user story 27）。
+class _ByteRangeChip extends StatelessWidget {
+  const _ByteRangeChip({required this.range, required this.selected});
+
+  /// 覆盖的字节范围。
+  final ByteRange range;
+
+  /// 当前是否被选中。
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final label =
+        '0x${range.start.toRadixString(16).toUpperCase()}'
+        '–0x${(range.end - 1).toRadixString(16).toUpperCase()}';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: selected
+            ? MediaColors.amber.withValues(alpha: 0.22)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(
+          color: selected
+              ? MediaColors.amber
+              : MediaColors.teal.withValues(alpha: 0.45),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: MediaType.coordinate(
+          selected ? MediaColors.amber : MediaColors.teal,
+        ).copyWith(fontSize: 10),
       ),
     );
   }
@@ -251,7 +345,9 @@ class _TagRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 14),
-              Flexible(child: _ValueText(text: text, align: TextAlign.right)),
+              Flexible(
+                child: _ValueText(text: text, align: TextAlign.right),
+              ),
             ],
           ),
         ),
@@ -411,9 +507,7 @@ String formatFieldValue(Object? value) {
           item == null || item is num || item is String || item is bool,
     );
     if (simple && value.length <= 6) {
-      return value
-          .map((Object? item) => item?.toString() ?? '—')
-          .join(', ');
+      return value.map((Object? item) => item?.toString() ?? '—').join(', ');
     }
     return '（${value.length} 项）';
   }
