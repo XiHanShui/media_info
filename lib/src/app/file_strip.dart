@@ -96,7 +96,30 @@ class FileStrip extends StatelessWidget {
         return <ContainerNode>[...top.where((ContainerNode c) => !identical(c, child)), ...child.children];
       }
     }
-    return top;
+    // 连续同类型节点太多时聚合——避免为成千上万个帧各建一个 widget。
+    const int kAggregateThreshold = 200;
+    if (top.length <= kAggregateThreshold) return top;
+    final aggregated = <ContainerNode>[];
+    ContainerNode? current;
+    for (final child in top) {
+      if (current != null && current.type == child.type) {
+        current = ContainerNode(
+          type: current.type,
+          offset: current.offset,
+          size: current.size + child.size,
+          dataOffset: current.dataOffset,
+          dataSize: current.dataSize + child.dataSize,
+          isOpaque: current.isOpaque || child.isOpaque,
+          children: const <ContainerNode>[],
+          fields: current.fields,
+        );
+      } else {
+        if (current != null) aggregated.add(current);
+        current = child;
+      }
+    }
+    if (current != null) aggregated.add(current);
+    return aggregated;
   }
 
   /// 算出 [target] 的祖先链（从根到 target 自己，含 target）。

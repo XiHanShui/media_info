@@ -29,6 +29,7 @@ import 'document_tab.dart';
 import 'file_strip.dart';
 import 'player/player_panel.dart';
 import 'position_service.dart';
+import '../core/position_index.dart';
 import 'theme.dart';
 import 'parse_service.dart';
 
@@ -105,6 +106,9 @@ class _AppShellState extends State<AppShell> {
   /// 每个标签页的解析状态。
   final Map<String, DocumentTabState> _states = <String, DocumentTabState>{};
 
+  /// 每个文件的位置索引缓存——避免每次 rebuild 都重新遍历所有帧。
+  final Map<String, PositionIndex?> _positionIndexes = <String, PositionIndex?>{};
+
   /// 当前选中的标签页。
   int _selectedIndex = 0;
 
@@ -140,6 +144,7 @@ class _AppShellState extends State<AppShell> {
     parseFileInIsolate(path).then(
       (ParsedDocument document) {
         if (!mounted) return;
+        _positionIndexes[path] = positionIndexOf(document);
         setState(() {
           _states[path] = DocumentTabState(
             path: path,
@@ -182,6 +187,7 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       final path = _paths.removeAt(index);
       _states.remove(path);
+      _positionIndexes.remove(path);
       if (_selectedIndex >= _paths.length) {
         _selectedIndex = _paths.length - 1;
       }
@@ -434,7 +440,7 @@ class _AppShellState extends State<AppShell> {
       height: kPlayerBarHeight,
       child: PlayerPanel(
         path: document.path,
-        positionIndex: positionIndexOf(document),
+        positionIndex: _positionIndexes[document.path],
         selectedOffset: _selectedNode?.offset,
         hasVideo: hasVideo,
         onPositionOffset: (int? offset) => _playheadNotifier.value = offset,
