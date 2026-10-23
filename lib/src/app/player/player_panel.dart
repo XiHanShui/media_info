@@ -64,34 +64,44 @@ class PlayerPanel extends StatefulWidget {
 }
 
 class _PlayerPanelState extends State<PlayerPanel> {
-  late final Player _player = Player();
+  Player? _player;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<String>? _errorSub;
   bool _failed = false;
+  String? _initError;
 
   @override
   void initState() {
     super.initState();
-    _positionSub = _player.stream.position.listen((Duration position) {
-      final index = widget.positionIndex;
-      if (index == null) return;
-      final offset = index.offsetOf(position);
-      if (offset != null) widget.onPositionOffset?.call(offset);
-    });
-    _errorSub = _player.stream.error.listen((String message) {
+    try {
+      MediaKit.ensureInitialized();
+      _player = Player();
+      _positionSub = _player!.stream.position.listen((Duration position) {
+        final index = widget.positionIndex;
+        if (index == null) return;
+        final offset = index.offsetOf(position);
+        if (offset != null) widget.onPositionOffset?.call(offset);
+      });
+      _errorSub = _player!.stream.error.listen((String message) {
+        if (!mounted) return;
+        setState(() => _failed = true);
+        widget.onError?.call(message);
+      });
+      unawaited(_open());
+    } catch (error) {
       if (!mounted) return;
-      setState(() => _failed = true);
-      widget.onError?.call(message);
-    });
-    unawaited(_open());
+      setState(() => _initError = '$error');
+    }
   }
 
   Future<void> _open() async {
+    final player = _player;
+    if (player == null) return;
     try {
       // media-kit 要的是 URI：Windows 上给裸路径它认不出来（上游 issue #1187）。
       // 统一转成 file:/// 形式，斜杠是正斜杠。
       final uri = 'file:///${widget.path.replaceAll('\\', '/')}';
-      await _player.open(Media(uri));
+      await player.open(Media(uri));
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _failed = true);
@@ -112,18 +122,20 @@ class _PlayerPanelState extends State<PlayerPanel> {
   void dispose() {
     unawaited(_positionSub?.cancel());
     unawaited(_errorSub?.cancel());
-    unawaited(_player.dispose());
+    final player = _player;
+    if (player != null) unawaited(player.dispose());
     super.dispose();
   }
 
   /// 跳到当前选中的块。
   Future<void> _jumpToSelection() async {
+    final player = _player;
     final index = widget.positionIndex;
     final offset = widget.selectedOffset;
-    if (index == null || offset == null) return;
+    if (player == null || index == null || offset == null) return;
     final target = index.timestampOf(offset);
     if (target == null) return;
-    await _player.seek(target);
+    await player.seek(target);
   }
 
   /// 用系统默认播放器打开这个文件（视频画面用）。
@@ -149,6 +161,35 @@ class _PlayerPanelState extends State<PlayerPanel> {
         ? null
         : index.timestampOf(widget.selectedOffset!);
 
+    if (_initError != null) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: MediaColors.panel,
+          border: Border(top: BorderSide(color: MediaColors.edge)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Text(
+          '播放器初始化失败：$_initError',
+          style: MediaType.note(MediaColors.rose),
+        ),
+      );
+    }
+
+    final player = _player;
+    if (player == null) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: MediaColors.panel,
+          border: Border(top: BorderSide(color: MediaColors.edge)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Text(
+          '播放器不可用',
+          style: MediaType.note(MediaColors.chalkFaint),
+        ),
+      );
+    }
+
     return Container(
       decoration: const BoxDecoration(
         color: MediaColors.panel,
@@ -158,9 +199,9 @@ class _PlayerPanelState extends State<PlayerPanel> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          _PlayButton(player: _player),
+          _PlayButton(player: player),
           const SizedBox(width: 12),
-          _TimeReadout(player: _player),
+          _TimeReadout(player: player),
           const SizedBox(width: 16),
           Expanded(child: _hintLine(target)),
           if (target != null)

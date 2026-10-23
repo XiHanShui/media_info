@@ -171,6 +171,9 @@ class _AppShellState extends State<AppShell> {
         return;
       }
       _addTab(path, select: true);
+      // 打开文件时自动展开播放器条——用户不必再找「播放」按钮。
+      _showPlayer = true;
+      _playheadOffset = null;
     });
   }
 
