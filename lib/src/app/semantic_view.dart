@@ -314,6 +314,9 @@ class _ByteRangeChip extends StatelessWidget {
         style: MediaType.coordinate(
           selected ? MediaColors.amber : MediaColors.teal,
         ).copyWith(fontSize: 10),
+        maxLines: 1,
+        overflow: TextOverflow.clip,
+        softWrap: false,
       ),
     );
   }
