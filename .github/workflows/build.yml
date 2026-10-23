@@ -1,0 +1,196 @@
+# Build media_info for Windows and macOS, and publish the release packages
+# as workflow artifacts.
+#
+# Decisions this workflow implements (see .scratch/media-info-mvp/issues/):
+#   - 10-ci-dual-platform.md  : dual-platform matrix, pinned Flutter version.
+#   - 11-distribution-form.md : zip on both platforms, no installer, no signing.
+#
+# NOTE: this repository has no pull-request flow, so the workflow deliberately
+# does NOT run on pull_request.
+
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            artifact_suffix: windows-x64
+            artifact_ext: zip
+          - os: macos-latest
+            platform: macos
+            artifact_suffix: macos-universal
+            artifact_ext: tar.gz
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Flutter version is PINNED (never "latest") so builds stay reproducible.
+      # 3.41.6 / Dart 3.11.4 is the version used on the maintainer's machine.
+      # `cache: true` caches the Flutter SDK download/bin cache.
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: 'stable'
+          cache: true
+
+      # Deliberately NOT set: PUB_HOSTED_URL / FLUTTER_STORAGE_BASE_URL.
+      # The maintainer's machine uses the China mirrors, but CI must use the
+      # official sources so local and CI behaviour stay comparable.
+      - name: Resolve pub cache directory
+        id: pubcache
+        shell: bash
+        run: |
+          if [ -n "${PUB_CACHE:-}" ]; then
+            dir="$PUB_CACHE"
+          elif [ -n "${LOCALAPPDATA:-}" ]; then
+            # Windows runners: pub caches under %LOCALAPPDATA%\Pub\Cache.
+            dir="$LOCALAPPDATA/Pub/Cache"
+          else
+            dir="$HOME/.pub-cache"
+          fi
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+          echo "pub cache: $dir"
+
+      # Exactly ONE path is cached: actions/cache skips saving the whole entry
+      # when one of several listed paths does not exist.
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pubcache.outputs.dir }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      # The Windows desktop build goes through CMake/Visual Studio; caching the
+      # CMake build directory keeps the incremental compile times sane.
+      - name: Cache Windows CMake build directory
+        if: matrix.platform == 'windows'
+        uses: actions/cache@v4
+        with:
+          path: build/windows/x64
+          key: ${{ runner.os }}-cmake-${{ matrix.platform }}-${{ hashFiles('windows/**') }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-${{ matrix.platform }}-
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version:[[:space:]]*\([0-9][^ +]*\).*/\1/p' pubspec.yaml | head -1)
+          if [ -z "$version" ]; then
+            echo "could not read version from pubspec.yaml" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "media_info v$version"
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter analyze
+        run: flutter analyze
+
+      - name: flutter test
+        run: flutter test
+
+      # Drop any stale release output so the packaged artifact only ever
+      # contains files produced by this run.
+      - name: Clean stale release output
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $release = 'build/windows/x64/runner/Release'
+          if (Test-Path $release) { Remove-Item -Recurse -Force $release }
+
+      - name: flutter build windows --release
+        if: matrix.platform == 'windows'
+        run: flutter build windows --release
+
+      # macOS only has to BUILD successfully here. There is no automated smoke
+      # test on macOS: the bundle is verified by hand on a real Mac.
+      - name: flutter build macos --release
+        if: matrix.platform == 'macos'
+        run: flutter build macos --release
+
+      # -------------------------------------------------------------------------
+      # FUTURE WORK — code signing / notarization (explicitly OUT OF SCOPE here,
+      # see issue 11-distribution-form.md). When that effort starts, insert the
+      # signing steps HERE, right before the packaging steps below, so the
+      # packaged artifact contains the signed bundle:
+      #
+      #   macOS (needs a paid Apple Developer account):
+      #     codesign --deep --force --options runtime --timestamp \
+      #       --sign "Developer ID Application: <TEAM> (<NAME>)" "$APP_BUNDLE"
+      #     xcrun notarytool submit "$ARCHIVE" --keychain-profile <PROFILE> --wait
+      #     xcrun stapler staple "$APP_BUNDLE"
+      #
+      #   Windows (optional, code signing certificate):
+      #     signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 \
+      #       "build/windows/x64/runner/Release/media_info.exe"
+      # -------------------------------------------------------------------------
+
+      - name: Package Windows zip
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $src = 'build/windows/x64/runner/Release'
+          $name = "media_info-v$version-windows-x64"
+          $dst = "dist/$name.zip"
+          if (-not (Test-Path "$src/media_info.exe")) {
+            throw "media_info.exe not found in $src"
+          }
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path "$src/*" -DestinationPath $dst -Force
+          Get-Item $dst | Select-Object Name, Length
+
+      - name: Package macOS tar.gz
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version='${{ steps.version.outputs.version }}'
+          name="media_info-v$version-macos-universal"
+          dst="dist/$name.tar.gz"
+          products='build/macos/Build/Products/Release'
+          app=$(find "$products" -maxdepth 1 -name '*.app' | head -1)
+          if [ -z "$app" ]; then
+            echo "no .app bundle found under $products" >&2
+            exit 1
+          fi
+          mkdir -p dist
+          tar -czf "$dst" -C "$(dirname "$app")" "$(basename "$app")"
+          ls -l "$dst"
+        # NOTE: the artifact name follows the decided naming scheme
+        # (issue 10-ci-dual-platform.md). The bundle inside is whatever the
+        # runner built (arm64 on macos-14+); "universal" is the agreed label,
+        # not a claim about the binary's architectures.
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: media_info-v${{ steps.version.outputs.version }}-${{ matrix.artifact_suffix }}.${{ matrix.artifact_ext }}
+          path: |
+            dist/media_info-v${{ steps.version.outputs.version }}-${{ matrix.artifact_suffix }}.${{ matrix.artifact_ext }}
+          retention-days: 30
+          if-no-files-found: error

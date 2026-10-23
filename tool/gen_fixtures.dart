@@ -44,11 +44,11 @@ const normalSamples = <Sample>[
   ]),
   Sample('flac_s16_44100_stereo.normal', [
     '-f', 'lavfi', '-i', 'sine=f=440:d=0.25',
-    '-c:a', 'flac',
+    '-c:a', 'flac', '-ar', '44100', '-ac', '2',
   ]),
   Sample('mp3_cbr128_44100_stereo.normal', [
     '-f', 'lavfi', '-i', 'sine=f=440:d=0.25',
-    '-c:a', 'libmp3lame', '-b:a', '128k',
+    '-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', '-ac', '2',
   ]),
   Sample('mp4_h264_aac_320x240.normal', [
     '-f', 'lavfi', '-i', 'testsrc=size=320x240:rate=25:d=1',
@@ -101,6 +101,14 @@ const edgeSamples = <Sample>[
   Sample('mkv_vp9_noaudio_320x240.edge', [
     '-f', 'lavfi', '-i', 'testsrc=size=320x240:rate=25:d=1',
     '-c:v', 'libvpx-vp9', '-b:v', '200k', '-an',
+  ]),
+  Sample('mov_video_only_320x240.edge', [
+    '-f', 'lavfi', '-i', 'testsrc=size=320x240:rate=25:d=1',
+    '-c:v', 'mpeg4', '-an',
+  ]),
+  Sample('webm_video_only_320x240.edge', [
+    '-f', 'lavfi', '-i', 'testsrc=size=320x240:rate=25:d=1',
+    '-c:v', 'libvpx', '-b:v', '200k', '-an',
   ]),
 ];
 
@@ -204,8 +212,15 @@ Future<void> main() async {
   if (!outDir.existsSync()) outDir.createSync(recursive: true);
 
   // 清掉旧素材，避免上一轮遗留的孤儿文件混进仓库。
+  // 删不掉的不硬删——文件可能被编辑器或杀软占着，跳过即可，
+  // 反正接下来的生成会覆盖同名文件。
   for (final entity in outDir.listSync()) {
-    if (entity is File) entity.deleteSync();
+    if (entity is! File) continue;
+    try {
+      entity.deleteSync();
+    } on FileSystemException {
+      stdout.writeln('跳过（被占用）：${entity.path}');
+    }
   }
 
   final generated = <String, File>{};
@@ -223,6 +238,15 @@ Future<void> main() async {
     final ext = extensionOf(damaged.name);
     final suffix = damaged.lieRiffSize == true ? 'liesize' : 'truncated';
     final path = '${outDir.path}/${damaged.name}.$suffix.$ext';
+    // 目标可能已存在且被占用——copySync 遇到已存在的文件会直接抛错。
+    final target = File(path);
+    if (target.existsSync()) {
+      try {
+        target.deleteSync();
+      } on FileSystemException {
+        stdout.writeln('目标被占用，删不掉：$path');
+      }
+    }
     source.copySync(path);
     if (damaged.truncateTo != null) await truncate(path, damaged.truncateTo!);
     if (damaged.lieRiffSize == true) await lieRiffSize(path);

@@ -1,0 +1,1331 @@
+{
+  "format": "MOV",
+  "fixture": "mov_mpeg4_aac_320x240.normal.mov",
+  "generator": "tool/gen_golden.dart",
+  "notes": [
+    "本文件由 `dart run tool/gen_golden.dart` 生成，请勿手工编辑。",
+    "每个节点最多记录 64 个子节点；超出时截断，并在该节点上标 childrenTruncated / childrenTotal。"
+  ],
+  "tree": {
+    "type": "MP4",
+    "offset": 0,
+    "size": 53656,
+    "dataOffset": 0,
+    "dataSize": 53656,
+    "isOpaque": false,
+    "fields": [],
+    "children": [
+      {
+        "type": "ftyp",
+        "offset": 0,
+        "size": 20,
+        "dataOffset": 8,
+        "dataSize": 12,
+        "isOpaque": false,
+        "fields": [
+          {
+            "key": "major_brand",
+            "value": "qt  "
+          },
+          {
+            "key": "minor_version",
+            "value": 512
+          },
+          {
+            "key": "compatible_brands",
+            "value": "hex:71742020"
+          }
+        ],
+        "children": []
+      },
+      {
+        "type": "wide",
+        "offset": 20,
+        "size": 8,
+        "dataOffset": 28,
+        "dataSize": 0,
+        "isOpaque": true,
+        "fields": [],
+        "children": []
+      },
+      {
+        "type": "mdat",
+        "offset": 28,
+        "size": 51893,
+        "dataOffset": 36,
+        "dataSize": 51885,
+        "isOpaque": true,
+        "fields": [],
+        "children": []
+      },
+      {
+        "type": "moov",
+        "offset": 51921,
+        "size": 1735,
+        "dataOffset": 51929,
+        "dataSize": 1727,
+        "isOpaque": false,
+        "fields": [],
+        "children": [
+          {
+            "type": "mvhd",
+            "offset": 51929,
+            "size": 108,
+            "dataOffset": 51937,
+            "dataSize": 100,
+            "isOpaque": false,
+            "fields": [
+              {
+                "key": "version",
+                "value": 0
+              },
+              {
+                "key": "flags",
+                "value": 0
+              },
+              {
+                "key": "creation_time",
+                "value": 0
+              },
+              {
+                "key": "modification_time",
+                "value": 0
+              },
+              {
+                "key": "timescale",
+                "value": 1000
+              },
+              {
+                "key": "duration",
+                "value": 1000
+              },
+              {
+                "key": "rate",
+                "value": 65536
+              },
+              {
+                "key": "volume",
+                "value": 256
+              },
+              {
+                "key": "reserved",
+                "value": "hex:00000000000000000000"
+              },
+              {
+                "key": "matrix",
+                "value": "hex:000100000000000000000000000000000001000000000000000000000000000040000000"
+              },
+              {
+                "key": "pre_defined",
+                "value": "hex:000000000000000000000000000000000000000000000000"
+              },
+              {
+                "key": "next_track_id",
+                "value": 3
+              }
+            ],
+            "children": []
+          },
+          {
+            "type": "trak",
+            "offset": 52037,
+            "size": 806,
+            "dataOffset": 52045,
+            "dataSize": 798,
+            "isOpaque": false,
+            "fields": [],
+            "children": [
+              {
+                "type": "tkhd",
+                "offset": 52045,
+                "size": 92,
+                "dataOffset": 52053,
+                "dataSize": 84,
+                "isOpaque": false,
+                "fields": [
+                  {
+                    "key": "version",
+                    "value": 0
+                  },
+                  {
+                    "key": "flags",
+                    "value": 3
+                  },
+                  {
+                    "key": "creation_time",
+                    "value": 0
+                  },
+                  {
+                    "key": "modification_time",
+                    "value": 0
+                  },
+                  {
+                    "key": "track_id",
+                    "value": 1
+                  },
+                  {
+                    "key": "reserved",
+                    "value": 0
+                  },
+                  {
+                    "key": "duration",
+                    "value": 1000
+                  },
+                  {
+                    "key": "reserved_1",
+                    "value": "hex:0000000000000000"
+                  },
+                  {
+                    "key": "layer",
+                    "value": 0
+                  },
+                  {
+                    "key": "alternate_group",
+                    "value": 0
+                  },
+                  {
+                    "key": "volume",
+                    "value": 0
+                  },
+                  {
+                    "key": "reserved_2",
+                    "value": 0
+                  },
+                  {
+                    "key": "matrix",
+                    "value": "hex:000100000000000000000000000000000001000000000000000000000000000040000000"
+                  },
+                  {
+                    "key": "width",
+                    "value": 20971520
+                  },
+                  {
+                    "key": "height",
+                    "value": 15728640
+                  }
+                ],
+                "children": []
+              },
+              {
+                "type": "edts",
+                "offset": 52137,
+                "size": 36,
+                "dataOffset": 52145,
+                "dataSize": 28,
+                "isOpaque": false,
+                "fields": [],
+                "children": [
+                  {
+                    "type": "elst",
+                    "offset": 52145,
+                    "size": 28,
+                    "dataOffset": 52153,
+                    "dataSize": 20,
+                    "isOpaque": false,
+                    "fields": [
+                      {
+                        "key": "version",
+                        "value": 0
+                      },
+                      {
+                        "key": "flags",
+                        "value": 0
+                      },
+                      {
+                        "key": "entry_count",
+                        "value": 1
+                      },
+                      {
+                        "key": "entries",
+                        "value": "hex:000003E80000000000010000"
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "mdia",
+                "offset": 52173,
+                "size": 670,
+                "dataOffset": 52181,
+                "dataSize": 662,
+                "isOpaque": false,
+                "fields": [],
+                "children": [
+                  {
+                    "type": "mdhd",
+                    "offset": 52181,
+                    "size": 32,
+                    "dataOffset": 52189,
+                    "dataSize": 24,
+                    "isOpaque": false,
+                    "fields": [
+                      {
+                        "key": "version",
+                        "value": 0
+                      },
+                      {
+                        "key": "flags",
+                        "value": 0
+                      },
+                      {
+                        "key": "creation_time",
+                        "value": 0
+                      },
+                      {
+                        "key": "modification_time",
+                        "value": 0
+                      },
+                      {
+                        "key": "timescale",
+                        "value": 12800
+                      },
+                      {
+                        "key": "duration",
+                        "value": 12800
+                      },
+                      {
+                        "key": "language",
+                        "value": 32767
+                      },
+                      {
+                        "key": "pre_defined",
+                        "value": 0
+                      }
+                    ],
+                    "children": []
+                  },
+                  {
+                    "type": "hdlr",
+                    "offset": 52213,
+                    "size": 45,
+                    "dataOffset": 52221,
+                    "dataSize": 37,
+                    "isOpaque": false,
+                    "fields": [
+                      {
+                        "key": "version",
+                        "value": 0
+                      },
+                      {
+                        "key": "flags",
+                        "value": 0
+                      },
+                      {
+                        "key": "pre_defined",
+                        "value": 1835560050
+                      },
+                      {
+                        "key": "handler_type",
+                        "value": "vide"
+                      },
+                      {
+                        "key": "reserved",
+                        "value": "hex:000000000000000000000000"
+                      },
+                      {
+                        "key": "name",
+                        "value": "\fVideoHandler"
+                      }
+                    ],
+                    "children": []
+                  },
+                  {
+                    "type": "minf",
+                    "offset": 52258,
+                    "size": 585,
+                    "dataOffset": 52266,
+                    "dataSize": 577,
+                    "isOpaque": false,
+                    "fields": [],
+                    "children": [
+                      {
+                        "type": "vmhd",
+                        "offset": 52266,
+                        "size": 20,
+                        "dataOffset": 52274,
+                        "dataSize": 12,
+                        "isOpaque": false,
+                        "fields": [
+                          {
+                            "key": "version",
+                            "value": 0
+                          },
+                          {
+                            "key": "flags",
+                            "value": 1
+                          },
+                          {
+                            "key": "graphicsmode",
+                            "value": 0
+                          },
+                          {
+                            "key": "opcolor",
+                            "value": "hex:000000000000"
+                          }
+                        ],
+                        "children": []
+                      },
+                      {
+                        "type": "hdlr",
+                        "offset": 52286,
+                        "size": 44,
+                        "dataOffset": 52294,
+                        "dataSize": 36,
+                        "isOpaque": false,
+                        "fields": [
+                          {
+                            "key": "version",
+                            "value": 0
+                          },
+                          {
+                            "key": "flags",
+                            "value": 0
+                          },
+                          {
+                            "key": "pre_defined",
+                            "value": 1684565106
+                          },
+                          {
+                            "key": "handler_type",
+                            "value": "url "
+                          },
+                          {
+                            "key": "reserved",
+                            "value": "hex:000000000000000000000000"
+                          },
+                          {
+                            "key": "name",
+                            "value": "\u000bDataHandler"
+                          }
+                        ],
+                        "children": []
+                      },
+                      {
+                        "type": "dinf",
+                        "offset": 52330,
+                        "size": 36,
+                        "dataOffset": 52338,
+                        "dataSize": 28,
+                        "isOpaque": false,
+                        "fields": [],
+                        "children": [
+                          {
+                            "type": "dref",
+                            "offset": 52338,
+                            "size": 28,
+                            "dataOffset": 52346,
+                            "dataSize": 20,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 1
+                              }
+                            ],
+                            "children": [
+                              {
+                                "type": "url ",
+                                "offset": 52354,
+                                "size": 12,
+                                "dataOffset": 52362,
+                                "dataSize": 4,
+                                "isOpaque": false,
+                                "fields": [
+                                  {
+                                    "key": "version",
+                                    "value": 0
+                                  },
+                                  {
+                                    "key": "flags",
+                                    "value": 1
+                                  },
+                                  {
+                                    "key": "location",
+                                    "value": ""
+                                  }
+                                ],
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "stbl",
+                        "offset": 52366,
+                        "size": 477,
+                        "dataOffset": 52374,
+                        "dataSize": 469,
+                        "isOpaque": false,
+                        "fields": [],
+                        "children": [
+                          {
+                            "type": "stsd",
+                            "offset": 52374,
+                            "size": 213,
+                            "dataOffset": 52382,
+                            "dataSize": 205,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 1
+                              },
+                              {
+                                "key": "sample_entry_size",
+                                "value": 197
+                              },
+                              {
+                                "key": "sample_entry_type",
+                                "value": "mp4v"
+                              },
+                              {
+                                "key": "reserved",
+                                "value": "hex:000000000000"
+                              },
+                              {
+                                "key": "data_reference_index",
+                                "value": 1
+                              },
+                              {
+                                "key": "pre_defined",
+                                "value": 0
+                              },
+                              {
+                                "key": "reserved_1",
+                                "value": 0
+                              },
+                              {
+                                "key": "pre_defined_1",
+                                "value": "hex:46464D500000020000000200"
+                              },
+                              {
+                                "key": "width",
+                                "value": 320
+                              },
+                              {
+                                "key": "height",
+                                "value": 240
+                              },
+                              {
+                                "key": "horizresolution",
+                                "value": 4718592
+                              },
+                              {
+                                "key": "vertresolution",
+                                "value": 4718592
+                              },
+                              {
+                                "key": "reserved_2",
+                                "value": 0
+                              },
+                              {
+                                "key": "frame_count",
+                                "value": 1
+                              },
+                              {
+                                "key": "compressorname",
+                                "value": "hex:124C61766336312E362E313030206D7065673400000000000000000000000000"
+                              },
+                              {
+                                "key": "depth",
+                                "value": 24
+                              },
+                              {
+                                "key": "pre_defined_2",
+                                "value": -1
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stts",
+                            "offset": 52587,
+                            "size": 24,
+                            "dataOffset": 52595,
+                            "dataSize": 16,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 1
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:0000001900000200"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stss",
+                            "offset": 52611,
+                            "size": 28,
+                            "dataOffset": 52619,
+                            "dataSize": 20,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 3
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:000000010000000D00000019"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stsc",
+                            "offset": 52639,
+                            "size": 40,
+                            "dataOffset": 52647,
+                            "dataSize": 32,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 2
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:000000010000000100000001000000070000001300000001"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stsz",
+                            "offset": 52679,
+                            "size": 120,
+                            "dataOffset": 52687,
+                            "dataSize": 112,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "sample_size",
+                                "value": 0
+                              },
+                              {
+                                "key": "sample_count",
+                                "value": 25
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:00001FE0000008440000042D000003B40000036C0000032B0000031C000002F40000032100000302000002D9000002D700002E1D00000255000002C0000002C1000002C9000002CE000002A40000027E0000027B0000028A000002800000027F00002DD8"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stco",
+                            "offset": 52799,
+                            "size": 44,
+                            "dataOffset": 52807,
+                            "dataSize": 36,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 7
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:000001240000229B00002C5D000032300000369700003BBA00004066"
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "trak",
+            "offset": 52843,
+            "size": 781,
+            "dataOffset": 52851,
+            "dataSize": 773,
+            "isOpaque": false,
+            "fields": [],
+            "children": [
+              {
+                "type": "tkhd",
+                "offset": 52851,
+                "size": 92,
+                "dataOffset": 52859,
+                "dataSize": 84,
+                "isOpaque": false,
+                "fields": [
+                  {
+                    "key": "version",
+                    "value": 0
+                  },
+                  {
+                    "key": "flags",
+                    "value": 3
+                  },
+                  {
+                    "key": "creation_time",
+                    "value": 0
+                  },
+                  {
+                    "key": "modification_time",
+                    "value": 0
+                  },
+                  {
+                    "key": "track_id",
+                    "value": 2
+                  },
+                  {
+                    "key": "reserved",
+                    "value": 0
+                  },
+                  {
+                    "key": "duration",
+                    "value": 250
+                  },
+                  {
+                    "key": "reserved_1",
+                    "value": "hex:0000000000000000"
+                  },
+                  {
+                    "key": "layer",
+                    "value": 0
+                  },
+                  {
+                    "key": "alternate_group",
+                    "value": 1
+                  },
+                  {
+                    "key": "volume",
+                    "value": 256
+                  },
+                  {
+                    "key": "reserved_2",
+                    "value": 0
+                  },
+                  {
+                    "key": "matrix",
+                    "value": "hex:000100000000000000000000000000000001000000000000000000000000000040000000"
+                  },
+                  {
+                    "key": "width",
+                    "value": 0
+                  },
+                  {
+                    "key": "height",
+                    "value": 0
+                  }
+                ],
+                "children": []
+              },
+              {
+                "type": "edts",
+                "offset": 52943,
+                "size": 36,
+                "dataOffset": 52951,
+                "dataSize": 28,
+                "isOpaque": false,
+                "fields": [],
+                "children": [
+                  {
+                    "type": "elst",
+                    "offset": 52951,
+                    "size": 28,
+                    "dataOffset": 52959,
+                    "dataSize": 20,
+                    "isOpaque": false,
+                    "fields": [
+                      {
+                        "key": "version",
+                        "value": 0
+                      },
+                      {
+                        "key": "flags",
+                        "value": 0
+                      },
+                      {
+                        "key": "entry_count",
+                        "value": 1
+                      },
+                      {
+                        "key": "entries",
+                        "value": "hex:000000FA0000040000010000"
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "mdia",
+                "offset": 52979,
+                "size": 645,
+                "dataOffset": 52987,
+                "dataSize": 637,
+                "isOpaque": false,
+                "fields": [],
+                "children": [
+                  {
+                    "type": "mdhd",
+                    "offset": 52987,
+                    "size": 32,
+                    "dataOffset": 52995,
+                    "dataSize": 24,
+                    "isOpaque": false,
+                    "fields": [
+                      {
+                        "key": "version",
+                        "value": 0
+                      },
+                      {
+                        "key": "flags",
+                        "value": 0
+                      },
+                      {
+                        "key": "creation_time",
+                        "value": 0
+                      },
+                      {
+                        "key": "modification_time",
+                        "value": 0
+                      },
+                      {
+                        "key": "timescale",
+                        "value": 44100
+                      },
+                      {
+                        "key": "duration",
+                        "value": 12049
+                      },
+                      {
+                        "key": "language",
+                        "value": 32767
+                      },
+                      {
+                        "key": "pre_defined",
+                        "value": 0
+                      }
+                    ],
+                    "children": []
+                  },
+                  {
+                    "type": "hdlr",
+                    "offset": 53019,
+                    "size": 45,
+                    "dataOffset": 53027,
+                    "dataSize": 37,
+                    "isOpaque": false,
+                    "fields": [
+                      {
+                        "key": "version",
+                        "value": 0
+                      },
+                      {
+                        "key": "flags",
+                        "value": 0
+                      },
+                      {
+                        "key": "pre_defined",
+                        "value": 1835560050
+                      },
+                      {
+                        "key": "handler_type",
+                        "value": "soun"
+                      },
+                      {
+                        "key": "reserved",
+                        "value": "hex:000000000000000000000000"
+                      },
+                      {
+                        "key": "name",
+                        "value": "\fSoundHandler"
+                      }
+                    ],
+                    "children": []
+                  },
+                  {
+                    "type": "minf",
+                    "offset": 53064,
+                    "size": 560,
+                    "dataOffset": 53072,
+                    "dataSize": 552,
+                    "isOpaque": false,
+                    "fields": [],
+                    "children": [
+                      {
+                        "type": "smhd",
+                        "offset": 53072,
+                        "size": 16,
+                        "dataOffset": 53080,
+                        "dataSize": 8,
+                        "isOpaque": false,
+                        "fields": [
+                          {
+                            "key": "version",
+                            "value": 0
+                          },
+                          {
+                            "key": "flags",
+                            "value": 0
+                          },
+                          {
+                            "key": "balance",
+                            "value": 0
+                          },
+                          {
+                            "key": "reserved",
+                            "value": 0
+                          }
+                        ],
+                        "children": []
+                      },
+                      {
+                        "type": "hdlr",
+                        "offset": 53088,
+                        "size": 44,
+                        "dataOffset": 53096,
+                        "dataSize": 36,
+                        "isOpaque": false,
+                        "fields": [
+                          {
+                            "key": "version",
+                            "value": 0
+                          },
+                          {
+                            "key": "flags",
+                            "value": 0
+                          },
+                          {
+                            "key": "pre_defined",
+                            "value": 1684565106
+                          },
+                          {
+                            "key": "handler_type",
+                            "value": "url "
+                          },
+                          {
+                            "key": "reserved",
+                            "value": "hex:000000000000000000000000"
+                          },
+                          {
+                            "key": "name",
+                            "value": "\u000bDataHandler"
+                          }
+                        ],
+                        "children": []
+                      },
+                      {
+                        "type": "dinf",
+                        "offset": 53132,
+                        "size": 36,
+                        "dataOffset": 53140,
+                        "dataSize": 28,
+                        "isOpaque": false,
+                        "fields": [],
+                        "children": [
+                          {
+                            "type": "dref",
+                            "offset": 53140,
+                            "size": 28,
+                            "dataOffset": 53148,
+                            "dataSize": 20,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 1
+                              }
+                            ],
+                            "children": [
+                              {
+                                "type": "url ",
+                                "offset": 53156,
+                                "size": 12,
+                                "dataOffset": 53164,
+                                "dataSize": 4,
+                                "isOpaque": false,
+                                "fields": [
+                                  {
+                                    "key": "version",
+                                    "value": 0
+                                  },
+                                  {
+                                    "key": "flags",
+                                    "value": 1
+                                  },
+                                  {
+                                    "key": "location",
+                                    "value": ""
+                                  }
+                                ],
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "stbl",
+                        "offset": 53168,
+                        "size": 456,
+                        "dataOffset": 53176,
+                        "dataSize": 448,
+                        "isOpaque": false,
+                        "fields": [],
+                        "children": [
+                          {
+                            "type": "stsd",
+                            "offset": 53176,
+                            "size": 186,
+                            "dataOffset": 53184,
+                            "dataSize": 178,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 1
+                              },
+                              {
+                                "key": "sample_entry_size",
+                                "value": 170
+                              },
+                              {
+                                "key": "sample_entry_type",
+                                "value": "mp4a"
+                              },
+                              {
+                                "key": "reserved",
+                                "value": "hex:000000000000"
+                              },
+                              {
+                                "key": "data_reference_index",
+                                "value": 1
+                              },
+                              {
+                                "key": "sample_entry_version",
+                                "value": 1
+                              },
+                              {
+                                "key": "sample_entry_revision",
+                                "value": 0
+                              },
+                              {
+                                "key": "sample_entry_vendor",
+                                "value": 0
+                              },
+                              {
+                                "key": "channelcount",
+                                "value": 1
+                              },
+                              {
+                                "key": "samplesize",
+                                "value": 16
+                              },
+                              {
+                                "key": "compression_id",
+                                "value": 65534
+                              },
+                              {
+                                "key": "packet_size",
+                                "value": 0
+                              },
+                              {
+                                "key": "samplerate",
+                                "value": 2890137600
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stts",
+                            "offset": 53362,
+                            "size": 32,
+                            "dataOffset": 53370,
+                            "dataSize": 24,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 2
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:0000000B000004000000000100000311"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stsc",
+                            "offset": 53394,
+                            "size": 64,
+                            "dataOffset": 53402,
+                            "dataSize": 56,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 4
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:000000010000000100000001000000020000000200000001000000050000000100000001000000060000000200000001"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stsz",
+                            "offset": 53458,
+                            "size": 68,
+                            "dataOffset": 53466,
+                            "dataSize": 60,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "sample_size",
+                                "value": 0
+                              },
+                              {
+                                "key": "sample_count",
+                                "value": 12
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:000001000000010200000095000000C0000000BE000000EF000000B7000000B3000000DB000000DC000000C1000000C0"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "stco",
+                            "offset": 53526,
+                            "size": 44,
+                            "dataOffset": 53534,
+                            "dataSize": 36,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "entry_count",
+                                "value": 7
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:000000240000210400002ADF0000308A000035E400003A0300003EE5"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "sgpd",
+                            "offset": 53570,
+                            "size": 26,
+                            "dataOffset": 53578,
+                            "dataSize": 18,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 1
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "grouping_type",
+                                "value": "roll"
+                              },
+                              {
+                                "key": "grouping_type_parameter",
+                                "value": 2
+                              },
+                              {
+                                "key": "default_length",
+                                "value": 1
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:FFFF"
+                              }
+                            ],
+                            "children": []
+                          },
+                          {
+                            "type": "sbgp",
+                            "offset": 53596,
+                            "size": 28,
+                            "dataOffset": 53604,
+                            "dataSize": 20,
+                            "isOpaque": false,
+                            "fields": [
+                              {
+                                "key": "version",
+                                "value": 0
+                              },
+                              {
+                                "key": "flags",
+                                "value": 0
+                              },
+                              {
+                                "key": "grouping_type",
+                                "value": "roll"
+                              },
+                              {
+                                "key": "grouping_type_parameter",
+                                "value": 1
+                              },
+                              {
+                                "key": "entries",
+                                "value": "hex:0000000C00000001"
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "udta",
+            "offset": 53624,
+            "size": 32,
+            "dataOffset": 53632,
+            "dataSize": 24,
+            "isOpaque": false,
+            "fields": [],
+            "children": [
+              {
+                "type": "©swr",
+                "offset": 53632,
+                "size": 24,
+                "dataOffset": 53640,
+                "dataSize": 16,
+                "isOpaque": true,
+                "fields": [],
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

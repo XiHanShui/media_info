@@ -1,8 +1,34 @@
 # media_info — Agent Notes
 
-Flutter desktop app (`media_info`). Currently a **fresh `flutter create` scaffold**: `lib/main.dart` is still the stock
-counter demo, and the only dependency besides Flutter SDK is `cupertino_icons`. There is no real feature code yet —
-do not assume the demo UI is the intended product.
+Flutter desktop app (`media_info`) for inspecting audio/video files. The parsing core
+(`lib/src/core/`: node model, spec-table DSL, generic container engine, format registry) is
+implemented, as are the format modules under `lib/src/formats/` and the whole UI under
+`lib/src/app/` + `lib/src/ui/` (app shell, semantic-field view, structure tree, hex panel, JSON export).
+
+**The implementation-layer contracts are `docs/design/core-api.md`** (parsing core),
+**`docs/design/ui-layout.md`** (UI layout/ownership) and **`docs/design/visual-language.md`**
+(colors, type, layout). All three are binding on parallel work — read them before writing code.
+Colors and type styles live in `lib/src/app/theme.dart`; use those constants, never inline hex.
+
+## Codebase memory (codebase-memory-mcp)
+
+Project name in the graph: **`G-WS-media_info`** (reindex with `index_repository(repo_path: "G:/WS/media_info", mode: "full")`).
+
+- **Known false positive**: every Dart file that uses the Dart 3 unnamed `library;` directive is reported as `parse_partial` at exactly that line (e.g. `lib/src/core/spec.dart:5`, `lib/src/formats/{riff,flac,mp3}.dart`). The line carries no declarations, so **nothing is actually missing from the graph** — ignore these flags.
+- `check_index_coverage` reports `freshness: metadata_changed` right after any reindex; re-run it before trusting `status`.
+- **`CALLS` edges are incomplete.** A "function with no inbound CALLS edge" is NOT proof of dead code: intra-file calls to private helpers are often missing (verified — 7 engine/format helpers looked orphaned but all are called), and functions passed as *references* (e.g. a `detect` callback handed to `FormatSpec`) never appear as calls at all. **Always confirm with `search_code`/grep before deleting anything.**
+
+**Use the graph, not grep, for discovery.** It already caught things grep missed: two parallel dispatch entry points (`registry.parseFormat` vs. a format module's own copy) and a `FormatSpec.parser` that was never wired on one format.
+
+**What the graph is and isn't good for, on this repo:**
+
+| Reliable | Not reliable |
+|---|---|
+| What exists (classes, functions, modules, imports) | `cognitive` / `complexity` — always 0 for Dart |
+| Cross-file call structure | `end_line` — Dart line spans are wrong (a 230-line function reported as 9) |
+| Which format modules register which `FormatSpec` | Intra-file private-helper calls (missing from `CALLS`) |
+
+So: use it for **discovery and wiring checks**; use `flutter analyze` + `dart format` + the test suite for size, complexity and style.
 
 ## Toolchain (this machine)
 
